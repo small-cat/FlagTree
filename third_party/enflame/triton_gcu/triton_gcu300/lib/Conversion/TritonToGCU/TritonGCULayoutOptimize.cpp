@@ -4,7 +4,7 @@
  */
 
 #include "Conversion/TritonToGCU/TritonToGCUPass.h"
-
+// test only
 #include "Dialect/TritonGCU/IR/TritonGCUDialect.h"
 #include "Dialect/TritonGCU/IR/TritonGCUTypes.h"
 #include "Utils.h"
