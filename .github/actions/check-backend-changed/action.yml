@@ -25,19 +25,9 @@ runs:
         echo "Backend: $BACKEND"
 
         if [ "${{ github.event_name }}" == "pull_request" ]; then
-          # 1. 显式拉取 base 分支，确保本地有这个引用 (例如 origin/main 或 origin/triton_v3.6.x)
-          git fetch origin ${{ github.base_ref }}
-          
-          # 2. 使用三点语法 origin/base...HEAD 来获取真正由 PR 带来的增量文件
-          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }})
         else
-          # 处理 push 事件
-          # 注意：如果是新推送的分支，before 可能是全 0，需要 fallback
-          if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]; then
-            FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git ls-tree -r --name-only HEAD)
-          else
-            FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-          fi
+          FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
         fi
         
         SHOULD_SKIP=true
