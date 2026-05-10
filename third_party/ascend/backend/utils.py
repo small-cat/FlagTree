@@ -357,7 +357,6 @@ def _precompile_npu_ext(header_path, gch_path):
         raise RuntimeError(f"Failed to compile {gch_path}, error: {result.stderr},cmd={cc_cmd}")
 
 
-
 def _build_npu_ext(obj_name: str, header_path, src_path, *, kernel_launcher="torch", precompile=False) -> str:
     suffix = sysconfig.get_config_var("EXT_SUFFIX")
     src_dir = os.path.dirname(src_path)

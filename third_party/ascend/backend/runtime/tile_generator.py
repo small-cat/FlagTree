@@ -93,9 +93,7 @@ class KernelMeta:
         :param dual_reduction: performing reduction on more than one axis.
         :param persistent_reduction: there is no splitting in reduction axis.
         """
-        self._validate_axis(
-            axis_sizes, split_params, fixed_split_params, tiling_params, low_dims
-        )
+        self._validate_axis(axis_sizes, split_params, fixed_split_params, tiling_params, low_dims)
 
         axis_dict = {}
         idx = 0
@@ -127,9 +125,7 @@ class KernelMeta:
 
         self.axis_info = list(axis_dict.values())
         self.split_axis = [x for x in axis_dict.values() if x.is_split_axis]
-        self.tunable_split_axis = [
-            x for x in axis_dict.values() if x.is_tunable_split_axis
-        ]
+        self.tunable_split_axis = [x for x in axis_dict.values() if x.is_tunable_split_axis]
         self.tiling_axis = [x for x in axis_dict.values() if x.is_tiling_axis]
         self.low_dims_axis = [x for x in axis_dict.values() if x.name in low_dims]
         self.dtype = dtype
@@ -194,16 +190,16 @@ class TileGenerator:
         self.is_simt_mode = kernel_meta.is_simt_mode
         local_mem_size = (rf_size_in_kbytes if self.is_simt_mode else ub_size_in_kbytes)
         self.max_numel_threshold = local_mem_size * 1024 // self.dtype_bytes // self.num_buffers
-        self.max_total_numel = functools.reduce(lambda x, y: x * y, [x.block_size for x in self.blocks]) if self.blocks else 1
+        self.max_total_numel = functools.reduce(lambda x, y: x * y, [x.block_size
+                                                                     for x in self.blocks]) if self.blocks else 1
         self.small_kernel = self.max_total_numel < 128 * 1024
         self.tiny_kernel = self.max_total_numel <= 32 * 1024
-        self.stop_numel = min(1024 // self.dtype_bytes, self.max_total_numel // (num_vector_core * 2)) if self.small_kernel else 1024 // self.dtype_bytes
+        self.stop_numel = min(1024 // self.dtype_bytes, self.max_total_numel //
+                              (num_vector_core * 2)) if self.small_kernel else 1024 // self.dtype_bytes
         self.max_programs_num = 65535
         self.tiny_program_threshold = num_vector_core // 8
         self.tiny_per_program_cap = 1
-        self.tiny_low_program_hist = {
-            p: 0 for p in range(1, self.tiny_program_threshold + 1)
-        }
+        self.tiny_low_program_hist = {p: 0 for p in range(1, self.tiny_program_threshold + 1)}
         self.tiny_low_program_active = False
         self.tiny_low_program_tile_floor = 0
 
@@ -269,11 +265,8 @@ class TileGenerator:
                     cfg[block_info.block_name] = curr_numel
             if axis.is_tiling_axis:
                 tiling_numel = self.aligned_numel(block_info.sub_block_size)
-                cfg[block_info.sub_block_name] = (
-                    tiling_numel
-                    if self.is_simt_mode
-                    else min(tiling_numel, candi_block[axis.index])
-                )
+                cfg[block_info.sub_block_name] = (tiling_numel if self.is_simt_mode else min(
+                    tiling_numel, candi_block[axis.index]))
 
     def find_config(self, cfg):
         for config_var in self.configs:
@@ -282,16 +275,11 @@ class TileGenerator:
         return False
 
     def _try_add_tiny_low_program_config(self, total_programs):
-        if (
-            not self.tiny_kernel
-            or total_programs < 1
-            or total_programs > self.tiny_program_threshold
-        ):
+        if (not self.tiny_kernel or total_programs < 1 or total_programs > self.tiny_program_threshold):
             return
 
         if self.tiny_low_program_hist.get(total_programs, 0) >= self.tiny_per_program_cap:
             return
-
 
         candi_block = tuple([x.block_size for x in self.blocks])
         if self.add_to_configs(list(candi_block)):
@@ -300,19 +288,13 @@ class TileGenerator:
             if not self.tiny_low_program_active:
                 self.tiny_low_program_active = True
                 self.tiny_low_program_tile_floor = self.calculate_tile_numel()
-            self.tiny_low_program_hist[total_programs] = (
-                self.tiny_low_program_hist.get(total_programs, 0) + 1
-            )
+            self.tiny_low_program_hist[total_programs] = (self.tiny_low_program_hist.get(total_programs, 0) + 1)
 
     def _calc_total_programs(self, candi_block=None):
         grids = []
         for axis in self.kernel_meta.split_axis:
             numel = self.numels[axis.index]
-            block_size = (
-                self.blocks[axis.index].block_size
-                if candi_block is None
-                else candi_block[axis.index]
-            )
+            block_size = (self.blocks[axis.index].block_size if candi_block is None else candi_block[axis.index])
             programs = (numel + block_size - 1) // block_size
             grids.append(programs)
 
@@ -328,15 +310,10 @@ class TileGenerator:
             total_programs = self._calc_total_programs(candi_block)
             program_threshold = self.tiny_program_threshold if self.small_kernel else num_vector_core // 2
             if total_programs <= program_threshold:
-                tiny_low_program_threshold = max(
-                    self.stop_numel, self.tiny_low_program_tile_floor // 2
-                )
+                tiny_low_program_threshold = max(self.stop_numel, self.tiny_low_program_tile_floor // 2)
                 stop_numel_threshold = max(stop_numel_threshold, tiny_low_program_threshold)
-        if (
-            tile_numel <= self.max_numel_threshold
-            and tile_numel >= stop_numel_threshold
-            and not self.find_config(newcfg)
-        ):
+        if (tile_numel <= self.max_numel_threshold and tile_numel >= stop_numel_threshold
+                and not self.find_config(newcfg)):
             self.configs.append(Config(newcfg, num_warps=1, num_stages=1))
             return True
         return False

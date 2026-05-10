@@ -64,7 +64,7 @@ class my_custom_op:
 
         # Tag ptr2 as an argument that should be aligned at dimension 1.
         # Tag 2nd argument that should be aligned at dimension 0.
-        self.align_dim = {"ptr2": 1, 1 : 0}
+        self.align_dim = {"ptr2": 1, 1: 0}
 
 
 @triton.jit
@@ -192,18 +192,18 @@ def test_custom_op():
             assert 'i32, ' not in line
             assert "iterator_types" in line
             for iterator_name in (
-                "parallel",
-                "broadcast",
-                "transpose",
-                "reduction",
-                "interleave",
-                "deinterleave",
-                "inverse",
-                "pad",
-                "concat",
-                "gather",
-                "cumulative",
-                "opaque",
+                    "parallel",
+                    "broadcast",
+                    "transpose",
+                    "reduction",
+                    "interleave",
+                    "deinterleave",
+                    "inverse",
+                    "pad",
+                    "concat",
+                    "gather",
+                    "cumulative",
+                    "opaque",
             ):
                 assert iterator_name in line
 
@@ -212,10 +212,7 @@ def _custom_lines(mlir: str, op_name: str):
     # Match the MLIR string attribute exactly (avoid `my_custom_op` matching
     # `my_custom_op_extra_buf`).
     quoted = f'"{op_name}"'
-    return [
-        line for line in mlir.splitlines()
-        if "hivm.hir.custom" in line and quoted in line
-    ]
+    return [line for line in mlir.splitlines() if "hivm.hir.custom" in line and quoted in line]
 
 
 def test_custom_op_extra_buffers_mixed_scalar_types():
@@ -295,7 +292,7 @@ if __name__ == "__main__":
     test_custom_op_extra_buffers_integer_variants()
     test_custom_op_extra_buffers_mixed_scalar_types()
     test_custom_op_extra_buffers_single_buffer()
-    mlir = compile_kernel(my_kernel,
-        {"x_ptr": "*fp32", "y_ptr": "*fp32", "out_ptr": "*fp32", "n": "i32"}, {"BLOCK": 256})
+    mlir = compile_kernel(my_kernel, {"x_ptr": "*fp32", "y_ptr": "*fp32", "out_ptr": "*fp32", "n": "i32"},
+                          {"BLOCK": 256})
     print(f"✅ Generated MLIR ({len(mlir)} chars):\n")
     print(mlir)

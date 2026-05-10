@@ -83,10 +83,7 @@ def check_axes_parse_res(act: dict, ref: dict):
 
 @pytest.fixture
 def mock_autotuner():
-    with mock.patch(
-        "triton.backends.ascend.runtime.autotuner.AutoTilingTuner.run",
-        new=MockAutoTilingTunerRun
-    ):
+    with mock.patch("triton.backends.ascend.runtime.autotuner.AutoTilingTuner.run", new=MockAutoTilingTunerRun):
         yield
 
 

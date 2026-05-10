@@ -103,9 +103,8 @@ PropagateUnrealizedCastDown::matchAndRewrite(UnrealizedConversionCastOp op,
     } else if (auto conditionOp = dyn_cast<scf::ConditionOp>(user)) {
       rewriteCondition(op, conditionOp, rewriter);
     } else if (user->hasTrait<OpTrait::Elementwise>() ||
-               isa<triton::BroadcastOp, triton::JoinOp,
-                   triton::ReshapeOp, triton::PrintOp,
-                   triton::ascend::AnnotationOp>(user)) {
+               isa<triton::BroadcastOp, triton::JoinOp, triton::ReshapeOp,
+                   triton::PrintOp, triton::ascend::AnnotationOp>(user)) {
       rewriteGeneraleOp(op, user, rewriter);
     } else if (isa<triton::AtomicCASOp>(user)) {
       auto *newOp =
@@ -147,7 +146,8 @@ bool AutoBlockifyPass::checkBlockifiable(Value v) {
       auto &os = llvm::dbgs();
       os << "User:\n" << *user << "\n";
     });
-    if (isa<cf::CondBranchOp, triton::IntToPtrOp, scf::WhileOp, triton::DotOp>(user) ||
+    if (isa<cf::CondBranchOp, triton::IntToPtrOp, scf::WhileOp, triton::DotOp>(
+            user) ||
         llvm::any_of(user->getOperandTypes(), isTensorPtrType))
       return false;
     if (auto ifOp = dyn_cast<scf::IfOp>(user)) {

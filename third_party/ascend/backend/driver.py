@@ -218,7 +218,7 @@ def _precompile_npu_ext_with_lock(header_src, enable_precompile):
     cache = get_cache_manager(precompile_hash)
     gch_path = cache.get_file("precompiled.h.gch")
     header_path = cache.get_file("precompiled.h")
-    if enable_precompile: 
+    if enable_precompile:
         if header_path is not None and gch_path is not None:
             return header_path
     else:
@@ -246,7 +246,7 @@ def _precompile_npu_ext_with_lock(header_src, enable_precompile):
             return header_path
         finally:
             fcntl.flock(f, fcntl.LOCK_UN)
-    
+
 
 def make_npu_launcher_stub(header_src, wrapper_src, debug=False):
     """
@@ -256,7 +256,7 @@ def make_npu_launcher_stub(header_src, wrapper_src, debug=False):
     # if precompile header file and its gch file not exist, do precompile
     header_path = _precompile_npu_ext_with_lock(header_src, enable_precompile)
     assert header_path is not None, "the precompiled.h path is empty."
-    
+
     # try to get cached file
     so_cache_key = hashlib.sha256(wrapper_src.encode("utf-8")).hexdigest()
     so_cache_manager = get_cache_manager(so_cache_key)
@@ -281,12 +281,12 @@ def make_npu_launcher_stub(header_src, wrapper_src, debug=False):
 
     kernel_launcher_type = "torch"
 
-
     with tempfile.TemporaryDirectory() as tmpdir:
         src_path = os.path.join(tmpdir, f"{name}.cxx")
         with open(src_path, "w") as f:
             f.write(wrapper_src)
-        so_path = _build_npu_ext(name, header_path, src_path, kernel_launcher=kernel_launcher_type, precompile=enable_precompile)
+        so_path = _build_npu_ext(name, header_path, src_path, kernel_launcher=kernel_launcher_type,
+                                 precompile=enable_precompile)
         if debug:
             with open(so_path, "rb") as f:
                 dump_manager.put(f.read(), so_name, binary=True)

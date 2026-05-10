@@ -36,10 +36,9 @@ static Type getElementType(Value value) {
   return type;
 }
 
-static int64_t getTensorNumElements(Value tensor)
-{
-    auto type = mlir::cast<RankedTensorType>(tensor.getType());
-    return type.getNumElements();
+static int64_t getTensorNumElements(Value tensor) {
+  auto type = mlir::cast<RankedTensorType>(tensor.getType());
+  return type.getNumElements();
 }
 
 static Value getInt32Value(RewriterBase &rewriter, Location loc, int val) {
@@ -77,25 +76,27 @@ SmallVector<Value> packOperands(mlir::triton::ElementwiseInlineAsmOp op,
   return packedOperands;
 }
 
-static SmallVector<Value> unpackElements(Location loc, Value packedValues, RewriterBase &rewriter)
-{
-    auto type = mlir::cast<RankedTensorType>(packedValues.getType());
-    auto elementType = type.getElementType();
-    auto shape = type.getShape();
+static SmallVector<Value> unpackElements(Location loc, Value packedValues,
+                                         RewriterBase &rewriter) {
+  auto type = mlir::cast<RankedTensorType>(packedValues.getType());
+  auto elementType = type.getElementType();
+  auto shape = type.getShape();
 
-    int64_t numElements = type.getNumElements();
+  int64_t numElements = type.getNumElements();
 
-    SmallVector<Value> result;
-    for (int64_t linearIdx = 0; linearIdx < numElements; linearIdx++) {
-        SmallVector<Value> indexes(shape.size());
-        int64_t remaining = linearIdx;
-        for (int64_t dim = shape.size() - 1; dim >= 0; dim--) {
-            indexes[dim] = rewriter.create<arith::ConstantIndexOp>(loc, remaining % shape[dim]);
-            remaining /= shape[dim];
-        }
-        Value extracted = rewriter.create<tensor::ExtractOp>(loc, elementType, packedValues, indexes);
-        result.push_back(extracted);
+  SmallVector<Value> result;
+  for (int64_t linearIdx = 0; linearIdx < numElements; linearIdx++) {
+    SmallVector<Value> indexes(shape.size());
+    int64_t remaining = linearIdx;
+    for (int64_t dim = shape.size() - 1; dim >= 0; dim--) {
+      indexes[dim] =
+          rewriter.create<arith::ConstantIndexOp>(loc, remaining % shape[dim]);
+      remaining /= shape[dim];
     }
+    Value extracted = rewriter.create<tensor::ExtractOp>(loc, elementType,
+                                                         packedValues, indexes);
+    result.push_back(extracted);
+  }
 
   return result;
 }
@@ -176,8 +177,7 @@ createDestOps(triton::ElementwiseInlineAsmOp op, RewriterBase &rewriter,
 }
 
 static LogicalResult processScalarInlineAsm(triton::ElementwiseInlineAsmOp op,
-                                            PatternRewriter &rewriter)
-{
+                                            PatternRewriter &rewriter) {
   Location loc = op.getLoc();
 
   auto outsWrapped = createDestOps(op, rewriter, {}, loc);
@@ -192,8 +192,7 @@ static LogicalResult processScalarInlineAsm(triton::ElementwiseInlineAsmOp op,
 }
 
 static LogicalResult processVectorInlineAsm(triton::ElementwiseInlineAsmOp op,
-                                            PatternRewriter &rewriter)
-{
+                                            PatternRewriter &rewriter) {
   Location loc = op.getLoc();
 
   SmallVector<SmallVector<Value>> unpackedOperands;
@@ -239,15 +238,15 @@ static LogicalResult processVectorInlineAsm(triton::ElementwiseInlineAsmOp op,
 
 } // namespace
 
-struct ElementwiseInlineAsmOpConversion : OpRewritePattern<triton::ElementwiseInlineAsmOp> {
-    using OpRewritePattern<triton::ElementwiseInlineAsmOp>::OpRewritePattern;
+struct ElementwiseInlineAsmOpConversion
+    : OpRewritePattern<triton::ElementwiseInlineAsmOp> {
+  using OpRewritePattern<triton::ElementwiseInlineAsmOp>::OpRewritePattern;
 
-    LogicalResult matchAndRewrite(triton::ElementwiseInlineAsmOp op,
-                                  PatternRewriter &rewriter) const final
-    {
-      return op.getOperands().empty() ? processScalarInlineAsm(op, rewriter)
-                                      : processVectorInlineAsm(op, rewriter);
-    }
+  LogicalResult matchAndRewrite(triton::ElementwiseInlineAsmOp op,
+                                PatternRewriter &rewriter) const final {
+    return op.getOperands().empty() ? processScalarInlineAsm(op, rewriter)
+                                    : processVectorInlineAsm(op, rewriter);
+  }
 };
 
 void TritonToLLVMPass::runOnOperation() {

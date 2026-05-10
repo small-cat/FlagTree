@@ -1,8 +1,8 @@
 #pragma once
-#include "TritonToHIVM/Passes.h"
-#include "TritonToHFusion/Passes.h"
-#include "TritonToLLVM/Passes.h"
 #include "AutoBlockify/Passes.h"
+#include "TritonToHFusion/Passes.h"
+#include "TritonToHIVM/Passes.h"
+#include "TritonToLLVM/Passes.h"
 // #include "amd/include/Dialect/TritonAMDGPU/IR/Dialect.h"
 // #include "amd/include/TritonAMDGPUTransforms/Passes.h"
 // #include "third_party/nvidia/include/Dialect/NVGPU/IR/Dialect.h"

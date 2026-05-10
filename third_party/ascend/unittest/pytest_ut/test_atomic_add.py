@@ -52,37 +52,31 @@ def atomic_add_supply(in_ptr0, out_ptr0, n_elements, BLOCK_SIZE: tl.constexpr):
 
 
 @triton.jit
-def atomic_add_for_load_offset(
-    index_ptr, in_ptr0, out_ptr0
-):
+def atomic_add_for_load_offset(index_ptr, in_ptr0, out_ptr0):
     index = tl.atomic_add(index_ptr, 1)
     val = tl.load(in_ptr0 + index)
     tl.store(out_ptr0, val)
 
 
 @triton.jit
-def atomic_add_for_store_offset(
-    index_ptr, out_ptr0
-):
+def atomic_add_for_store_offset(index_ptr, out_ptr0):
     index = tl.atomic_add(index_ptr, 1)
     tl.store(out_ptr0 + index, 1)
 
 
-@pytest.mark.parametrize('param_list',
-                         [
-                             ['int64', (256, 32), 2],
-                             ['int32', (32, 32), 2],
-                             ['int16', (32, 32), 2],
-                             ['int8', (32, 32), 2],
-                             ['uint8', (32, 32), 2],
-                             ['float32', (32, 32), 2],
-                             ['float16', (64, 64), 4],
-                             ['bfloat16', (64, 64), 4],
-                             ['float32', (128, 128), 8],
-                             ['float16', (128, 128), 16],
-                             ['float32', (32768, 16), 32],
-                         ]
-                         )
+@pytest.mark.parametrize('param_list', [
+    ['int64', (256, 32), 2],
+    ['int32', (32, 32), 2],
+    ['int16', (32, 32), 2],
+    ['int8', (32, 32), 2],
+    ['uint8', (32, 32), 2],
+    ['float32', (32, 32), 2],
+    ['float16', (64, 64), 4],
+    ['bfloat16', (64, 64), 4],
+    ['float32', (128, 128), 8],
+    ['float16', (128, 128), 16],
+    ['float32', (32768, 16), 32],
+])
 def test_atomic_add(param_list):
     dtype, shape, ncore = param_list
     block_size = shape[0] * shape[1] / ncore
@@ -189,7 +183,7 @@ def test_atomic_add_for_load_offset():
     index_ref += 1
     output_ref = output.clone()
     output_ref = input_tensor[index]
-    
+
     atomic_add_for_load_offset[(1, )](index, input_tensor, output)
     torch.equal(index, index_ref)
     torch.equal(output, output_ref)
@@ -202,7 +196,7 @@ def test_atomic_add_for_store_offset():
     index_ref += 1
     output_ref = output.clone()
     output_ref[index] = 1
-    
+
     atomic_add_for_store_offset[(1, )](index, output)
     torch.equal(index, index_ref)
     torch.equal(output, output_ref)

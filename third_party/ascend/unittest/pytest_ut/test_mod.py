@@ -68,7 +68,7 @@ def test_case(param_list):
     y_ref = torch_pointwise(x0, x1, dtype)
     if dtype == "float16":
         y_ref = y_ref.to(torch.float16)
-    y_cal = torch.zeros(shape, dtype = eval('torch.' + dtype)).npu()
+    y_cal = torch.zeros(shape, dtype=eval('torch.' + dtype)).npu()
     triton_mod[ncore, 1, 1](x0, x1, y_cal, xblock, xblock_sub)
     #test_common.validate_cmp(dtype, y_cal, y_ref.npu())
     if dtype == 'int8':

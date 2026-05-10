@@ -84,10 +84,9 @@ def atan(arg0, _builder=None):
 @core.extern
 def tanh(arg0, _builder=None):
     if triton_enable_libdevice_simt() and is_compile_on_910_95:
-        return core.extern_elementwise(
-            "", "", [arg0], {
-                (core.dtype("fp32"), ): ("__hmf_tanh_fp32", core.dtype("fp32")),
-            }, is_pure=True, _builder=_builder)
+        return core.extern_elementwise("", "", [arg0], {
+            (core.dtype("fp32"), ): ("__hmf_tanh_fp32", core.dtype("fp32")),
+        }, is_pure=True, _builder=_builder)
     else:
         return core.extern_elementwise(
             "", "", [arg0], {
@@ -117,10 +116,9 @@ def ldexp(arg0, arg1, _builder=None):
 @core.extern
 def pow(arg0, arg1, _builder=None):
     if triton_enable_libdevice_simt() and is_compile_on_910_95:
-        return core.extern_elementwise(
-            "", "", [arg0, arg1], {
-                (core.dtype("fp32"), core.dtype("fp32")): ("__hmf_pow_fp32", core.dtype("fp32")),
-            }, is_pure=True, _builder=_builder)
+        return core.extern_elementwise("", "", [arg0, arg1], {
+            (core.dtype("fp32"), core.dtype("fp32")): ("__hmf_pow_fp32", core.dtype("fp32")),
+        }, is_pure=True, _builder=_builder)
     else:
         return core.extern_elementwise(
             "", "", [arg0, arg1], {
@@ -142,10 +140,10 @@ def isnan(arg0, _builder=None):
 
 @core.extern
 def div_rz(arg0, arg1, _builder=None):
-    return core.extern_elementwise(
-        "", "", [arg0, arg1], {
-            (core.dtype("fp32"), core.dtype("fp32")): ("__hmf_div_rz_fp32", core.dtype("fp32")),
-        }, is_pure=True, _builder=_builder)
+    return core.extern_elementwise("", "", [arg0, arg1], {
+        (core.dtype("fp32"), core.dtype("fp32")): ("__hmf_div_rz_fp32", core.dtype("fp32")),
+    }, is_pure=True, _builder=_builder)
+
 
 @core.builtin
 def fast_dividef(arg0, arg1, _builder=None):
@@ -153,6 +151,7 @@ def fast_dividef(arg0, arg1, _builder=None):
     arg1 = semantic.to_tensor(arg1, _builder)
     ret = semantic.fdiv(arg0, arg1, False, _builder)
     return ret
+
 
 @core.builtin
 def fast_expf(arg0, _builder=None):
@@ -163,19 +162,16 @@ def fast_expf(arg0, _builder=None):
 
 @core.extern
 def fmod(arg0, arg1, _builder=None):
-    return core.extern_elementwise(
-        "", "", [arg0, arg1], {
-            (core.dtype("fp32"), core.dtype("fp32")): ("__hmf_fmod_fp32", core.dtype("fp32")),
-        }, is_pure=True, _builder=_builder)
+    return core.extern_elementwise("", "", [arg0, arg1], {
+        (core.dtype("fp32"), core.dtype("fp32")): ("__hmf_fmod_fp32", core.dtype("fp32")),
+    }, is_pure=True, _builder=_builder)
 
 
 @core.extern
 def float_as_int(arg0, _builder=None):
-    return core.extern_elementwise(
-        "", "", [arg0], {
-            (core.dtype("fp32"),): ("__hmf_float_as_int_fp32", core.dtype("int32")),
-        }, is_pure=True, _builder=_builder)
-
+    return core.extern_elementwise("", "", [arg0], {
+        (core.dtype("fp32"), ): ("__hmf_float_as_int_fp32", core.dtype("int32")),
+    }, is_pure=True, _builder=_builder)
 
 
 @core.extern
@@ -190,37 +186,34 @@ def atan2(arg0, arg1, _builder):
         }, is_pure=True, _builder=_builder)
 
 
-@core.builtin 
-@math._check_dtype(dtypes=["fp32"]) 
+@core.builtin
+@math._check_dtype(dtypes=["fp32"])
 @math._add_math_1arg_docstr("trunc")
 def trunc(arg0, _builder=None):
     if triton_enable_libdevice_simt() and is_compile_on_910_95:
         return core.extern_elementwise(
             "", "", [arg0], {
-                (core.dtype("fp16"),): ("__hmf_trunc_fp16", core.dtype("fp16")),
-                (core.dtype("fp32"),): ("__hmf_trunc_fp32", core.dtype("fp32")),
+                (core.dtype("fp16"), ): ("__hmf_trunc_fp16", core.dtype("fp16")),
+                (core.dtype("fp32"), ): ("__hmf_trunc_fp32", core.dtype("fp32")),
             }, is_pure=True, _builder=_builder)
     else:
-        arg0 = semantic.to_tensor(arg0, _builder) 
- 
- 
-        zero = semantic.full(arg0.shape, 0.0, arg0.type.scalar, _builder) 
-        condition = semantic.greater_equal(arg0, zero, _builder) 
-    
-    
-        floor_result = core.tensor(_builder.create_floor(arg0.handle), arg0.type) 
-        ceil_result = core.tensor(_builder.create_ceil(arg0.handle), arg0.type) 
-    
-    
+        arg0 = semantic.to_tensor(arg0, _builder)
+
+        zero = semantic.full(arg0.shape, 0.0, arg0.type.scalar, _builder)
+        condition = semantic.greater_equal(arg0, zero, _builder)
+
+        floor_result = core.tensor(_builder.create_floor(arg0.handle), arg0.type)
+        ceil_result = core.tensor(_builder.create_ceil(arg0.handle), arg0.type)
+
         return semantic.where(condition, floor_result, ceil_result, _builder)
 
 
 @core.extern
 def round(arg0, _builder=None):
-    return core.extern_elementwise(
-        "", "", [arg0], {
-            (core.dtype("fp32"), ): ("__hmf_roundf", core.dtype("fp32")),
-        }, is_pure=True, _builder=_builder)
+    return core.extern_elementwise("", "", [arg0], {
+        (core.dtype("fp32"), ): ("__hmf_roundf", core.dtype("fp32")),
+    }, is_pure=True, _builder=_builder)
+
 
 @core.builtin
 @math._check_dtype(dtypes=["bf16", "fp16", "fp32"])
@@ -232,8 +225,8 @@ def acos(arg0: core.tensor, _builder: ir.builder):
             core.static_assert(False)
         return core.extern_elementwise(
             "", "", [arg0], {
-                (core.dtype("fp16"),): ("__hmf_acos_fp16", core.dtype("fp16")),
-                (core.dtype("fp32"),): ("__hmf_acos_fp32", core.dtype("fp32")),
+                (core.dtype("fp16"), ): ("__hmf_acos_fp16", core.dtype("fp16")),
+                (core.dtype("fp32"), ): ("__hmf_acos_fp32", core.dtype("fp32")),
             }, is_pure=True, _builder=_builder)
     else:
         pi = 3.1415926536
@@ -293,8 +286,8 @@ def sinh(arg0: core.tensor, _builder: ir.builder):
             core.static_assert(False)
         return core.extern_elementwise(
             "", "", [arg0], {
-                (core.dtype("fp16"),): ("__hmf_sinh_fp16", core.dtype("fp16")),
-                (core.dtype("fp32"),): ("__hmf_sinh_fp32", core.dtype("fp32")),
+                (core.dtype("fp16"), ): ("__hmf_sinh_fp16", core.dtype("fp16")),
+                (core.dtype("fp32"), ): ("__hmf_sinh_fp32", core.dtype("fp32")),
             }, is_pure=True, _builder=_builder)
     else:
         arg0 = semantic.to_tensor(arg0, _builder)
@@ -315,8 +308,8 @@ def cosh(arg0: core.tensor, _builder: ir.builder):
             core.static_assert(False)
         return core.extern_elementwise(
             "", "", [arg0], {
-                (core.dtype("fp16"),): ("__hmf_cosh_fp16", core.dtype("fp16")),
-                (core.dtype("fp32"),): ("__hmf_cosh_fp32", core.dtype("fp32")),
+                (core.dtype("fp16"), ): ("__hmf_cosh_fp16", core.dtype("fp16")),
+                (core.dtype("fp32"), ): ("__hmf_cosh_fp32", core.dtype("fp32")),
             }, is_pure=True, _builder=_builder)
     else:
         arg0 = semantic.to_tensor(arg0, _builder)
@@ -402,8 +395,8 @@ def expm1(arg0: core.tensor, _builder: ir.builder):
             core.static_assert(False)
         return core.extern_elementwise(
             "", "", [arg0], {
-                (core.dtype("fp16"),): ("__hmf_expm1_fp16", core.dtype("fp16")),
-                (core.dtype("fp32"),): ("__hmf_expm1_fp32", core.dtype("fp32")),
+                (core.dtype("fp16"), ): ("__hmf_expm1_fp16", core.dtype("fp16")),
+                (core.dtype("fp32"), ): ("__hmf_expm1_fp32", core.dtype("fp32")),
             }, is_pure=True, _builder=_builder)
     else:
         arg0 = semantic.to_tensor(arg0, _builder)
@@ -424,21 +417,9 @@ def nextafter(arg0: core.tensor, arg1: core.tensor, _builder: ir.builder):
     else:
         x = semantic.to_tensor(arg0, _builder)
         y = semantic.to_tensor(arg1, _builder)
-        dtype_map = {
-            "bf16": core.int16,
-            "fp16": core.int16,
-            "fp32": core.int32
-        }
-        min_pos_bit = {
-            "bf16": 0x0001,
-            "fp16": 0x0001,
-            "fp32": 0x00000001
-        }
-        max_neg_bit = {
-            "bf16": 0x8001,
-            "fp16": 0x8001,
-            "fp32": 0x80000001
-        }
+        dtype_map = {"bf16": core.int16, "fp16": core.int16, "fp32": core.int32}
+        min_pos_bit = {"bf16": 0x0001, "fp16": 0x0001, "fp32": 0x00000001}
+        max_neg_bit = {"bf16": 0x8001, "fp16": 0x8001, "fp32": 0x80000001}
         int_type = dtype_map[x.type.scalar.name]
         x_eq_y = semantic.equal(x, y, _builder)
         x_gt_0 = semantic.greater_than(x, 0, _builder)
@@ -501,69 +482,68 @@ def cyl_bessel_i0(arg0: core.tensor, _builder: ir.builder):
         if arg0.dtype == core.dtype("fp16"):
             core.static_print("extern livdevice.cyl_bessel_i0 for dtype bf16 is unspported for now.")
             core.static_assert(False)
-        return core.extern_elementwise(
-            "", "", [arg0], {
-                (core.dtype("fp32"), ): ("__hmf_cyl_bessel_i0_fp32", core.dtype("fp32")),
-            }, is_pure=True, _builder=_builder)
+        return core.extern_elementwise("", "", [arg0], {
+            (core.dtype("fp32"), ): ("__hmf_cyl_bessel_i0_fp32", core.dtype("fp32")),
+        }, is_pure=True, _builder=_builder)
     else:
         param1 = [
-                -4.41534164647933937950e-18,
-                +3.33079451882223809783e-17,
-                -2.43127984654795469359e-16,
-                +1.71539128555513303061e-15,
-                -1.16853328779934516808e-14,
-                +7.67618549860493561688e-14,
-                -4.85644678311192946090e-13,
-                +2.95505266312963983461e-12,
-                -1.72682629144155570723e-11,
-                +9.67580903537323691224e-11,
-                -5.18979560163526290666e-10,
-                +2.65982372468238665035e-09,
-                -1.30002500998624804212e-08,
-                +6.04699502254191894932e-08,
-                -2.67079385394061173391e-07,
-                +1.11738753912010371815e-06,
-                -4.41673835845875056359e-06,
-                +1.64484480707288970893e-05,
-                -5.75419501008210370398e-05,
-                +1.88502885095841655729e-04,
-                -5.76375574538582365885e-04,
-                +1.63947561694133579842e-03,
-                -4.32430999505057594430e-03,
-                +1.05464603945949983183e-02,
-                -2.37374148058994688156e-02,
-                +4.93052842396707084878e-02,
-                -9.49010970480476444210e-02,
-                +1.71620901522208775349e-01,
-                -3.04682672343198398683e-01,
-                +6.76795274409476084995e-01,
+            -4.41534164647933937950e-18,
+            +3.33079451882223809783e-17,
+            -2.43127984654795469359e-16,
+            +1.71539128555513303061e-15,
+            -1.16853328779934516808e-14,
+            +7.67618549860493561688e-14,
+            -4.85644678311192946090e-13,
+            +2.95505266312963983461e-12,
+            -1.72682629144155570723e-11,
+            +9.67580903537323691224e-11,
+            -5.18979560163526290666e-10,
+            +2.65982372468238665035e-09,
+            -1.30002500998624804212e-08,
+            +6.04699502254191894932e-08,
+            -2.67079385394061173391e-07,
+            +1.11738753912010371815e-06,
+            -4.41673835845875056359e-06,
+            +1.64484480707288970893e-05,
+            -5.75419501008210370398e-05,
+            +1.88502885095841655729e-04,
+            -5.76375574538582365885e-04,
+            +1.63947561694133579842e-03,
+            -4.32430999505057594430e-03,
+            +1.05464603945949983183e-02,
+            -2.37374148058994688156e-02,
+            +4.93052842396707084878e-02,
+            -9.49010970480476444210e-02,
+            +1.71620901522208775349e-01,
+            -3.04682672343198398683e-01,
+            +6.76795274409476084995e-01,
         ]
         param2 = [
-                -7.23318048787475395456e-18,
-                -4.83050448594418207126e-18,
-                +4.46562142029675999901e-17,
-                +3.46122286769746109310e-17,
-                -2.82762398051658348494e-16,
-                -3.42548561967721913462e-16,
-                +1.77256013305652638360e-15,
-                +3.81168066935262242075e-15,
-                -9.55484669882830764870e-15,
-                -4.15056934728722208663e-14,
-                +1.54008621752140982691e-14,
-                +3.85277838274214270114e-13,
-                +7.18012445138366623367e-13,
-                -1.79417853150680611778e-12,
-                -1.32158118404477131188e-11,
-                -3.14991652796324136454e-11,
-                +1.18891471078464383424e-11,
-                +4.94060238822496958910e-10,
-                +3.39623202570838634515e-09,
-                +2.26666899049817806459e-08,
-                +2.04891858946906374183e-07,
-                +2.89137052083475648297e-06,
-                +6.88975834691682398426e-05,
-                +3.36911647825569408990e-03,
-                +8.04490411014108831608e-01,
+            -7.23318048787475395456e-18,
+            -4.83050448594418207126e-18,
+            +4.46562142029675999901e-17,
+            +3.46122286769746109310e-17,
+            -2.82762398051658348494e-16,
+            -3.42548561967721913462e-16,
+            +1.77256013305652638360e-15,
+            +3.81168066935262242075e-15,
+            -9.55484669882830764870e-15,
+            -4.15056934728722208663e-14,
+            +1.54008621752140982691e-14,
+            +3.85277838274214270114e-13,
+            +7.18012445138366623367e-13,
+            -1.79417853150680611778e-12,
+            -1.32158118404477131188e-11,
+            -3.14991652796324136454e-11,
+            +1.18891471078464383424e-11,
+            +4.94060238822496958910e-10,
+            +3.39623202570838634515e-09,
+            +2.26666899049817806459e-08,
+            +2.04891858946906374183e-07,
+            +2.89137052083475648297e-06,
+            +6.88975834691682398426e-05,
+            +3.36911647825569408990e-03,
+            +8.04490411014108831608e-01,
         ]
         arg0 = semantic.to_tensor(arg0, _builder)
         abs_x = core.tensor(_builder.create_fabs(arg0.handle), arg0.type)
@@ -603,14 +583,14 @@ def signbit(arg0, _builder=None):
     if triton_enable_libdevice_simt() and is_compile_on_910_95:
         return core.extern_elementwise(
             "", "", [arg0], {
-                (core.dtype("fp16"),): ("__hmf_signbit_fp16", core.dtype("int32")),
-                (core.dtype("fp32"),): ("__hmf_signbit_fp32", core.dtype("int32")),
+                (core.dtype("fp16"), ): ("__hmf_signbit_fp16", core.dtype("int32")),
+                (core.dtype("fp32"), ): ("__hmf_signbit_fp32", core.dtype("int32")),
             }, is_pure=True, _builder=_builder)
     else:
         arg0_scalar_ty = arg0.type.scalar
         if arg0_scalar_ty == core.float32:
             int_ty = core.int32
-        else: # arg0 type: float16 / bfloat16
+        else:  # arg0 type: float16 / bfloat16
             int_ty = core.int16
 
         arg0 = semantic.to_tensor(arg0, _builder)
@@ -622,8 +602,7 @@ def signbit(arg0, _builder=None):
 
         shift = semantic.full(arg0.shape, shift, int_ty, _builder)
         sign_bit_tensor = semantic.lshr(int_tensor, shift, _builder)
-        sign_bit_tensor = semantic.and_(
-            sign_bit_tensor, semantic.full(arg0.shape, 1, int_ty, _builder), _builder)
+        sign_bit_tensor = semantic.and_(sign_bit_tensor, semantic.full(arg0.shape, 1, int_ty, _builder), _builder)
         return semantic.equal(sign_bit_tensor, 1, _builder)
 
 
@@ -637,16 +616,14 @@ def signbit(arg0, _builder=None):
 @math._check_dtype(dtypes=["fp32"])
 def erfinv(arg0, _builder=None):
     if triton_enable_libdevice_simt() and is_compile_on_910_95:
-        return core.extern_elementwise(
-            "", "", [arg0], {
-                (core.dtype("fp32"), ): ("__hmf_erfinv_fp32", core.dtype("fp32")),
-            }, is_pure=True, _builder=_builder)
+        return core.extern_elementwise("", "", [arg0], {
+            (core.dtype("fp32"), ): ("__hmf_erfinv_fp32", core.dtype("fp32")),
+        }, is_pure=True, _builder=_builder)
     else:
         arg0_scalar_ty = arg0.type.scalar
         arg0 = semantic.to_tensor(arg0, _builder)
 
-        inv_sqrt_pi_times_2 = semantic.full(
-            arg0.shape, 1.128379167, arg0_scalar_ty, _builder).handle  # 2 / sqrt(pi)
+        inv_sqrt_pi_times_2 = semantic.full(arg0.shape, 1.128379167, arg0_scalar_ty, _builder).handle  # 2 / sqrt(pi)
         coeff_low_numerator = [-0.140543331, 0.914624893, -1.645349621, 0.886226899]
         coeff_low_denominator = [0.012229801, -0.329097515, 1.442710462, -2.118377725, 1.0]
         coeff_high_numerator = [1.641345311, 3.429567803, -1.624906493, -1.970840454]
@@ -654,18 +631,17 @@ def erfinv(arg0, _builder=None):
 
         # low cal
         arg0_squared = _builder.create_fmul(arg0.handle, arg0.handle)
-        numerator_low_range = semantic.full(
-            arg0.shape, coeff_low_numerator[0], arg0_scalar_ty, _builder).handle
+        numerator_low_range = semantic.full(arg0.shape, coeff_low_numerator[0], arg0_scalar_ty, _builder).handle
         for i in range(1, len(coeff_low_numerator)):
-            numerator_low_range = _builder.create_fma(numerator_low_range, arg0_squared,
+            numerator_low_range = _builder.create_fma(
+                numerator_low_range, arg0_squared,
                 semantic.full(arg0.shape, coeff_low_numerator[i], arg0_scalar_ty, _builder).handle)
 
-        denominator_low_range = semantic.full(
-            arg0.shape, coeff_low_denominator[0], arg0_scalar_ty, _builder).handle
+        denominator_low_range = semantic.full(arg0.shape, coeff_low_denominator[0], arg0_scalar_ty, _builder).handle
         for i in range(1, len(coeff_low_denominator)):
             denominator_low_range = _builder.create_fma(
-                denominator_low_range, arg0_squared, semantic.full(
-                    arg0.shape, coeff_low_denominator[i], arg0_scalar_ty, _builder).handle)
+                denominator_low_range, arg0_squared,
+                semantic.full(arg0.shape, coeff_low_denominator[i], arg0_scalar_ty, _builder).handle)
 
         low_res = _builder.create_fmul(arg0.handle, _builder.create_fdiv(numerator_low_range, denominator_low_range))
 
@@ -677,94 +653,67 @@ def erfinv(arg0, _builder=None):
                     _builder.create_fdiv(
                         _builder.create_fsub(
                             semantic.full(arg0.shape, 1, arg0_scalar_ty, _builder).handle,
-                            _builder.create_fabs(arg0.handle)
-                        ),
-                        semantic.full(arg0.shape, 2, arg0_scalar_ty, _builder).handle
-                    )
-                )
-            )
-        )
+                            _builder.create_fabs(arg0.handle)),
+                        semantic.full(arg0.shape, 2, arg0_scalar_ty, _builder).handle))))
         numerator_high_range = semantic.full(arg0.shape, coeff_high_numerator[0], arg0_scalar_ty, _builder).handle
         for i in range(1, len(coeff_high_numerator)):
             numerator_high_range = _builder.create_fma(
-                numerator_high_range, arg0_erf_trans, semantic.full(
-                    arg0.shape, coeff_high_numerator[i], arg0_scalar_ty, _builder).handle)
+                numerator_high_range, arg0_erf_trans,
+                semantic.full(arg0.shape, coeff_high_numerator[i], arg0_scalar_ty, _builder).handle)
 
         denominator_high_range = semantic.full(arg0.shape, coeff_high_denominator[0], arg0_scalar_ty, _builder).handle
         for i in range(1, len(coeff_high_denominator)):
             denominator_high_range = _builder.create_fma(
-                denominator_high_range, arg0_erf_trans, semantic.full(
-                    arg0.shape, coeff_high_denominator[i], arg0_scalar_ty, _builder).handle)
+                denominator_high_range, arg0_erf_trans,
+                semantic.full(arg0.shape, coeff_high_denominator[i], arg0_scalar_ty, _builder).handle)
 
         high_res = _builder.create_fdiv(numerator_high_range, denominator_high_range)
         high_res = semantic.mul(
-            semantic.where(
-                signbit(arg0, _builder=_builder),
-                semantic.full(arg0.shape, -1, arg0_scalar_ty, _builder),
-                semantic.full(arg0.shape, 1, arg0_scalar_ty, _builder),
-                _builder),
-            core.tensor(high_res, arg0.type), True, _builder
-        ).handle
+            semantic.where(signbit(arg0, _builder=_builder), semantic.full(arg0.shape, -1, arg0_scalar_ty, _builder),
+                           semantic.full(arg0.shape, 1, arg0_scalar_ty, _builder), _builder),
+            core.tensor(high_res, arg0.type), True, _builder).handle
 
         for _ in range(2):
             low_res = _builder.create_fsub(
-                low_res, _builder.create_fdiv(
-                    _builder.create_fsub(
-                        _builder.create_erf(low_res), arg0.handle
-                    ),
+                low_res,
+                _builder.create_fdiv(
+                    _builder.create_fsub(_builder.create_erf(low_res), arg0.handle),
                     _builder.create_fmul(
-                        inv_sqrt_pi_times_2, _builder.create_exp(
+                        inv_sqrt_pi_times_2,
+                        _builder.create_exp(
                             _builder.create_fmul(
                                 semantic.full(arg0.shape, -1, arg0_scalar_ty, _builder).handle,
-                                _builder.create_fmul(low_res, low_res)
-                            )
-                        )
-                    )
-                )
-            )
+                                _builder.create_fmul(low_res, low_res))))))
 
             high_res = _builder.create_fsub(
-                high_res, _builder.create_fdiv(
-                    _builder.create_fsub(
-                        _builder.create_erf(high_res), arg0.handle
-                    ),
+                high_res,
+                _builder.create_fdiv(
+                    _builder.create_fsub(_builder.create_erf(high_res), arg0.handle),
                     _builder.create_fmul(
-                        inv_sqrt_pi_times_2, _builder.create_exp(
+                        inv_sqrt_pi_times_2,
+                        _builder.create_exp(
                             _builder.create_fmul(
                                 semantic.full(arg0.shape, -1, arg0_scalar_ty, _builder).handle,
-                                _builder.create_fmul(high_res, high_res)
-                            )
-                        )
-                    )
-                )
-            )
+                                _builder.create_fmul(high_res, high_res))))))
 
         arg0_abs = core.tensor(_builder.create_fabs(arg0.handle), arg0.type)
         # Check if |arg0| > 1
-        arg0_over = semantic.greater_than(
-            arg0_abs, semantic.full(arg0.shape, 1, arg0_scalar_ty, _builder), _builder)
+        arg0_over = semantic.greater_than(arg0_abs, semantic.full(arg0.shape, 1, arg0_scalar_ty, _builder), _builder)
         nan_tensor = semantic.full(arg0.shape, float("nan"), arg0_scalar_ty, _builder)
         # Check if |arg0| = 1
-        arg0_equal1 = semantic.equal(
-            arg0_abs, semantic.full(arg0.shape, 1, arg0_scalar_ty, _builder), _builder
-        )
+        arg0_equal1 = semantic.equal(arg0_abs, semantic.full(arg0.shape, 1, arg0_scalar_ty, _builder), _builder)
         pos_inf_tensor = semantic.full(arg0.shape, float("inf"), arg0_scalar_ty, _builder)
         neg_inf_tensor = semantic.full(arg0.shape, float("-inf"), arg0_scalar_ty, _builder)
-        inf_res = semantic.where(
-            signbit(arg0, _builder=_builder), neg_inf_tensor, pos_inf_tensor, _builder
-        )
+        inf_res = semantic.where(signbit(arg0, _builder=_builder), neg_inf_tensor, pos_inf_tensor, _builder)
         # Check if |arg0| >= 0.7
-        arg0_high = semantic.greater_equal(
-            arg0_abs, semantic.full(arg0.shape, 0.7, arg0_scalar_ty, _builder), _builder
-        )
+        arg0_high = semantic.greater_equal(arg0_abs, semantic.full(arg0.shape, 0.7, arg0_scalar_ty, _builder), _builder)
 
         return semantic.where(
-            arg0_equal1, inf_res, semantic.where(
-                arg0_over, nan_tensor, semantic.where(
-                    arg0_high, core.tensor(high_res, arg0.type), core.tensor(low_res, arg0.type), _builder
-                ), _builder
-            ), _builder
-        )
+            arg0_equal1, inf_res,
+            semantic.where(
+                arg0_over, nan_tensor,
+                semantic.where(arg0_high, core.tensor(high_res, arg0.type), core.tensor(low_res, arg0.type), _builder),
+                _builder), _builder)
 
 
 # Note:
@@ -786,9 +735,7 @@ def gamma(arg0, _builder=None):
         -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7
     ]
     condition = semantic.less_than(arg0, 0.5, _builder)  # 1 - x = x -> x = 0.5
-    reflect_arg0 = semantic.where(
-        condition, semantic.sub(1, arg0, True, _builder), arg0, _builder
-    )
+    reflect_arg0 = semantic.where(condition, semantic.sub(1, arg0, True, _builder), arg0, _builder)
 
     x = semantic.full(arg0.shape, 0.99999999999980993, arg0_scalar_ty, _builder)
     for i in range(0, len(lanczos_coeff)):
@@ -801,40 +748,29 @@ def gamma(arg0, _builder=None):
     gamma_res = _builder.create_fmul(
         _builder.create_fmul(sqrt_2pi_tensor,
                              pow(t, semantic.sub(reflect_arg0, 0.5, True, _builder), _builder=_builder).handle),
+        _builder.create_fmul(sqrt_2pi_tensor,
+                             pow(t, semantic.sub(reflect_arg0, 0.5, True, _builder), _builder=_builder).handle),
         _builder.create_fmul(
-            sqrt_2pi_tensor, pow(
-                t, semantic.sub(reflect_arg0, 0.5, True, _builder), _builder=_builder
-            ).handle
-        ),
-        _builder.create_fmul(
-            x.handle, _builder.create_exp(
-                _builder.create_fmul(
-                    t.handle, semantic.full(arg0.shape, -1, arg0_scalar_ty, _builder).handle
-                )
-            )
-        )
-    )
+            x.handle,
+            _builder.create_exp(
+                _builder.create_fmul(t.handle,
+                                     semantic.full(arg0.shape, -1, arg0_scalar_ty, _builder).handle))))
 
-    gamma_res_reflect = _builder.create_fdiv(
-        _builder.create_fdiv(pi_tensor, gamma_res),
-        _builder.create_sin(_builder.create_fmul(pi_tensor, arg0.handle))
-    )
+    gamma_res_reflect = _builder.create_fdiv(_builder.create_fdiv(pi_tensor, gamma_res),
+                                             _builder.create_sin(_builder.create_fmul(pi_tensor, arg0.handle)))
 
-    is_neg_int = semantic.logical_and(
-        semantic.equal(math.floor(arg0, _builder=_builder), arg0, _builder),
-        semantic.less_than(arg0, 0, _builder), _builder
-    )
+    is_neg_int = semantic.logical_and(semantic.equal(math.floor(arg0, _builder=_builder), arg0, _builder),
+                                      semantic.less_than(arg0, 0, _builder), _builder)
     pos_inf_tensor = semantic.full(arg0.shape, float('inf'), arg0_scalar_ty, _builder)
     neg_inf_tensor = semantic.full(arg0.shape, float('-inf'), arg0_scalar_ty, _builder)
-    gamma_res_reflect = semantic.where(
-        is_neg_int, pos_inf_tensor, core.tensor(gamma_res_reflect, arg0.type), _builder)
+    gamma_res_reflect = semantic.where(is_neg_int, pos_inf_tensor, core.tensor(gamma_res_reflect, arg0.type), _builder)
 
     res = semantic.where(condition, gamma_res_reflect, core.tensor(gamma_res, arg0.type), _builder)
     is_pos_inf_input = semantic.equal(arg0, pos_inf_tensor, _builder)
     is_neg_inf_input = semantic.equal(arg0, neg_inf_tensor, _builder)
 
-    return semantic.where(is_pos_inf_input, pos_inf_tensor, semantic.where(
-            is_neg_inf_input, neg_inf_tensor, res, _builder), _builder)
+    return semantic.where(is_pos_inf_input, pos_inf_tensor,
+                          semantic.where(is_neg_inf_input, neg_inf_tensor, res, _builder), _builder)
 
 
 # Note:
@@ -849,18 +785,15 @@ def gamma(arg0, _builder=None):
 @math._check_dtype(dtypes=["fp32"])
 def lgamma(arg0, _builder=None):
     if triton_enable_libdevice_simt() and is_compile_on_910_95:
-        return core.extern_elementwise(
-            "", "", [arg0], {
-                (core.dtype("fp32"), ): ("__hmf_lgamma_fp32", core.dtype("fp32")),
-            }, is_pure=True, _builder=_builder)
+        return core.extern_elementwise("", "", [arg0], {
+            (core.dtype("fp32"), ): ("__hmf_lgamma_fp32", core.dtype("fp32")),
+        }, is_pure=True, _builder=_builder)
     else:
         arg0_scalar_ty = arg0.type.scalar
         arg0 = semantic.to_tensor(arg0, _builder)
 
         inf_tensor = semantic.full(arg0.shape, float('inf'), arg0_scalar_ty, _builder)
-        is_inf = semantic.equal(
-            core.tensor(_builder.create_fabs(arg0.handle), arg0.type), inf_tensor, _builder
-        )
+        is_inf = semantic.equal(core.tensor(_builder.create_fabs(arg0.handle), arg0.type), inf_tensor, _builder)
         gamma_res = _builder.create_fabs(gamma(arg0, _builder=_builder).handle)
         lgamma_res = _builder.create_log(gamma_res)
 
@@ -874,10 +807,9 @@ def lgamma(arg0, _builder=None):
 @math._add_math_1arg_docstr("nearbyint")
 def nearbyint(arg0: core.tensor, _builder: ir.builder):
     if triton_enable_libdevice_simt() and is_compile_on_910_95:
-        return core.extern_elementwise(
-            "", "", [arg0], {
-                (core.dtype("fp32"),): ("__hmf_nearbyint_fp32", core.dtype("fp32")),
-            }, is_pure=True, _builder=_builder)
+        return core.extern_elementwise("", "", [arg0], {
+            (core.dtype("fp32"), ): ("__hmf_nearbyint_fp32", core.dtype("fp32")),
+        }, is_pure=True, _builder=_builder)
     else:
         """
         Round argument x to an integer value in floating-point format.
@@ -912,14 +844,11 @@ def nearbyint(arg0: core.tensor, _builder: ir.builder):
 
         is_even = semantic.equal(basic_round, double_half, _builder)
 
-        adjustment = semantic.where(is_positive,
-                                semantic.full(arg0.shape, -1.0, arg0.type.scalar, _builder),
-                                semantic.full(arg0.shape, 1.0, arg0.type.scalar, _builder),
-                                _builder)
+        adjustment = semantic.where(is_positive, semantic.full(arg0.shape, -1.0, arg0.type.scalar, _builder),
+                                    semantic.full(arg0.shape, 1.0, arg0.type.scalar, _builder), _builder)
 
-        banker_result = semantic.where(is_even, basic_round,
-                                    semantic.add(basic_round, adjustment, True, _builder),
-                                    _builder)
+        banker_result = semantic.where(is_even, basic_round, semantic.add(basic_round, adjustment, True, _builder),
+                                       _builder)
 
         # Final result: Use banker's rounding for cases exactly at 0.5, otherwise use basic rounding.
         return semantic.where(is_half, banker_result, basic_round, _builder)
@@ -934,8 +863,8 @@ def asin(arg0: core.tensor, _builder: ir.builder):
     if triton_enable_libdevice_simt() and is_compile_on_910_95:
         return core.extern_elementwise(
             "", "", [arg0], {
-                (core.dtype("fp16"),): ("__hmf_asin_fp16", core.dtype("fp16")),
-                (core.dtype("fp32"),): ("__hmf_asin_fp32", core.dtype("fp32")),
+                (core.dtype("fp16"), ): ("__hmf_asin_fp16", core.dtype("fp16")),
+                (core.dtype("fp32"), ): ("__hmf_asin_fp32", core.dtype("fp32")),
             }, is_pure=True, _builder=_builder)
     else:
         """
@@ -959,10 +888,9 @@ def asin(arg0: core.tensor, _builder: ir.builder):
 @math._add_math_1arg_docstr("base-10 logarithm")
 def log10(arg0: core.tensor, _builder: ir.builder):
     if triton_enable_libdevice_simt() and is_compile_on_910_95:
-        return core.extern_elementwise(
-            "", "", [arg0], {
-                (core.dtype("fp32"),): ("__hmf_log10_fp32", core.dtype("fp32")),
-            }, is_pure=True, _builder=_builder)
+        return core.extern_elementwise("", "", [arg0], {
+            (core.dtype("fp32"), ): ("__hmf_log10_fp32", core.dtype("fp32")),
+        }, is_pure=True, _builder=_builder)
     else:
         """
         Calculate the base 10 logarithm of the input argument x.
@@ -985,10 +913,9 @@ def log10(arg0: core.tensor, _builder: ir.builder):
 @math._add_math_2arg_docstr("copysign")
 def copysign(arg0: core.tensor, arg1: core.tensor, _builder: ir.builder):
     if triton_enable_libdevice_simt() and is_compile_on_910_95:
-        return core.extern_elementwise(
-            "", "", [arg0, arg1], {
-                (core.dtype("fp32"), core.dtype("fp32")): ("__hmf_copysign_fp32", core.dtype("fp32")),
-            }, is_pure=True, _builder=_builder)
+        return core.extern_elementwise("", "", [arg0, arg1], {
+            (core.dtype("fp32"), core.dtype("fp32")): ("__hmf_copysign_fp32", core.dtype("fp32")),
+        }, is_pure=True, _builder=_builder)
     else:
         """
         Create a floating-point value with the magnitude of x and the sign of y.
@@ -1009,7 +936,8 @@ def copysign(arg0: core.tensor, arg1: core.tensor, _builder: ir.builder):
         is_negative_nonzero = semantic.less_than(y, zero, _builder)
         is_negative = semantic.or_(is_negative_zero, is_negative_nonzero, _builder)
 
-        neg_magnitude = semantic.mul(magnitude, semantic.full(magnitude.shape, -1.0, magnitude.type.scalar, _builder), True, _builder)
+        neg_magnitude = semantic.mul(magnitude, semantic.full(magnitude.shape, -1.0, magnitude.type.scalar, _builder),
+                                     True, _builder)
 
         return semantic.where(is_negative, neg_magnitude, magnitude, _builder)
 

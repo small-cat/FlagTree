@@ -176,10 +176,10 @@ def _make_align_dim_attrs(op, builder, arg_attrs):
 
     for arg, align_val in op.align_dim.items():
         if isinstance(arg, str) and arg in align_arg_indices:
-            arg_attrs[align_arg_indices[arg]] = { name : builder.get_int_attr(align_val) }
+            arg_attrs[align_arg_indices[arg]] = {name: builder.get_int_attr(align_val)}
             print(arg_attrs[align_arg_indices[arg]])
         elif isinstance(arg, int):
-            arg_attrs[arg] = { name : builder.get_int_attr(align_val) }
+            arg_attrs[arg] = {name: builder.get_int_attr(align_val)}
             print(arg_attrs[arg])
         else:
             assert False, f"{name}'s keys should be string or int"
@@ -216,7 +216,7 @@ def _add_optional_extra_buffer_attr(op, builder, attrs):
 
     extra_buffers = getattr(op, name)
     if isinstance(extra_buffers, tuple):
-        extra_buffers = [ extra_buffers ]
+        extra_buffers = [extra_buffers]
 
     extra_buffer_types, extra_buffer_sizes = zip(*extra_buffers)
     attrs[name + "_types"] = builder.get_type_array_attr([ty.to_ir(builder) for ty in extra_buffer_types])
@@ -255,7 +255,6 @@ def _make_attrs(op, builder):
 
     # Add bit code path attribute, formalize to abosulte path.
     _add_bitcode_attr(op, builder, attrs)
-
 
     _add_optional_indexing_map_attr(op, builder, attrs)
     _add_optional_iterator_types_attr(op, builder, attrs)

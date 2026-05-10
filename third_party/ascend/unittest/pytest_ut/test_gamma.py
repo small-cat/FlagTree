@@ -70,11 +70,9 @@ def test_all_blocks_parallel(param_list, monkeypatch):
     monkeypatch.delenv("TRITON_ALL_BLOCKS_PARALLEL")
 
 
-@pytest.mark.parametrize('param_list',
-                         [
-                             ['float32', (2, 2048, 8), 2, 32768, 512],
-                         ]
-                         )
+@pytest.mark.parametrize('param_list', [
+    ['float32', (2, 2048, 8), 2, 32768, 512],
+])
 def test_auto_blockify(param_list, monkeypatch):
     monkeypatch.setenv("TRITON_ALL_BLOCKS_PARALLEL", "1")
     dtype, shape, ncore, xblock, xblock_sub = param_list

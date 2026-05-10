@@ -84,11 +84,9 @@ def test_all_blocks_parallel(param_list, monkeypatch):
     monkeypatch.delenv("TRITON_ALL_BLOCKS_PARALLEL")
 
 
-@pytest.mark.parametrize('param_list',
-                         [
-                             ['float32', (2, 4096, 8), 2, 32768, 1024],
-                         ]
-                         )
+@pytest.mark.parametrize('param_list', [
+    ['float32', (2, 4096, 8), 2, 32768, 1024],
+])
 def test_auto_blockify(param_list, monkeypatch):
     monkeypatch.setenv("TRITON_ALL_BLOCKS_PARALLEL", "1")
     dtype, shape, ncore, xblock, xblock_sub = param_list
@@ -97,7 +95,7 @@ def test_auto_blockify(param_list, monkeypatch):
     x[0][0][1] = -1  # erfinv(-1) -> -∞
 
     # Avoid numerical instability near ±1
-    # Move values in (threshold, 1) to threshold and (-1, -threshold) to -threshold 
+    # Move values in (threshold, 1) to threshold and (-1, -threshold) to -threshold
     threshold = 1 - 1.1e-4
     too_close_pos = (x > threshold) & (x < 1)
     too_close_neg = (x < -threshold) & (x > -1)
