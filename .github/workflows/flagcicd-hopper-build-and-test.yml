@@ -15,7 +15,14 @@ jobs:
     runs-on: [flagcicd-flagtree-nvidia3.6]
     container:
       image: harbor.baai.ac.cn/flagtree/flagtree-3.6.x-py312-torch2.8.0a0_5228986c39.nv25.05-ubuntu24.04:202603
-      options: --uts=host --ipc=host --privileged  --ulimit stack=67108864 --ulimit memlock=-1 --security-opt seccomp=unconfined --gpus=all --user root
+      options: 
+        --uts=host
+        --ipc=host
+        --privileged
+        --ulimit stack=67108864
+        --ulimit memlock=-1
+        --security-opt seccomp=unconfined
+        --gpus=all
       volumes:
         - /mnt/airs-business/cicd:/mnt/airs-business/cicd
         - /home/secure/flagcicd-flagGems-test:/home/secure/flagcicd-flagGems-test
@@ -181,7 +188,7 @@ jobs:
           # cd "$FLAGGEMS_DIR"
           # pip install -e . --no-build-isolation 2>/dev/null || true
 
-          pip install pyyaml==6.0
+          pip install pyyaml==6.0.2
           # 生成 pytest marks 参数
           MARKS=$(python3  "${SCRIPTS_DIR}/parse_operators.py"  "$OPERATORS_YAML")
           if [ -z "$MARKS" ]; then
