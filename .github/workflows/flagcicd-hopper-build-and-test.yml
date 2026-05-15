@@ -231,5 +231,5 @@ jobs:
               exit 0
             fi
           }
-
+          # test only
           echo "FlagGems accuracy tests completed successfully"
