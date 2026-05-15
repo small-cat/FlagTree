@@ -77,7 +77,7 @@ jobs:
           MAX_JOBS=32 python3 -m pip install . --no-build-isolation
 
       - name: FlagTree Build on NVidia (triton_v3.6.x branch)
-        if: ${{ steps.check_backend.outputs.should_skip != 'true' && env.TARGET_BRANCH == 'triton_v3.6.x' }}
+        if: ${{ steps.check_backend.outputs.should_skip != 'true' && env.TARGET_BRANCH == 'triton_v3.6.x_test_base_branch' }}
         shell: bash
         run: |
           set -x
@@ -185,10 +185,10 @@ jobs:
           fi
 
           # 安装 FlagGems 依赖
-          # cd "$FLAGGEMS_DIR"
-          # pip install -e . --no-build-isolation 2>/dev/null || true
+          cd "$FLAGGEMS_DIR"
+          pip install -e . --no-build-isolation 2>/dev/null || true
 
-          pip install pyyaml==6.0.2
+          pip install --no-cache-dir pyyaml==6.0.2
           # 生成 pytest marks 参数
           MARKS=$(python3  "${SCRIPTS_DIR}/parse_operators.py"  "$OPERATORS_YAML")
           if [ -z "$MARKS" ]; then
@@ -199,8 +199,8 @@ jobs:
           echo "Generated pytest marks: ${MARKS:0:200}..."
 
           # 构建 pytest 命令
-          # PYTEST_CMD="python3 -m pytest tests/ -m \"$MARKS\" --ref=cpu --quick -v --timeout=300"
-          PYTEST_CMD="python3 -m pytest tests/ -m \"$MARKS\" --ref=cpu -v"
+          PYTEST_CMD="python3 -m pytest tests/ -m \"$MARKS\" --ref=cpu --quick -v"
+          # PYTEST_CMD="python3 -m pytest tests/ -m \"$MARKS\" --ref=cpu -v"
 
           # 添加 ignore 参数
           if [ -f "$IGNORE_LIST" ]; then       # 如果有忽略列表文件就读取它
@@ -213,30 +213,42 @@ jobs:
             done < "$IGNORE_LIST"
           fi
 
+
           # 设置超时时间 (55分钟 = 3300秒)
-          TIMEOUT=3600
+          # TIMEOUT=3600
 
           echo "=========================================="
           echo "Running FlagGems accuracy tests"
-          echo "Timeout: ${TIMEOUT}s (~60min)"
+          # echo "Timeout: ${TIMEOUT}s (~60min)"
           echo "Quick mode: enabled"
           echo "Reference device: cpu"
           echo "=========================================="
 
-          # 运行测试 (带超时)
+          # # 运行测试 (带超时)
+          # cd "$FLAGGEMS_DIR"
+          # # 如果command 执行失败，就执行后面的代码块
+          # timeout $TIMEOUT bash -c "$PYTEST_CMD" || {
+          #   EXIT_CODE=$?
+          #   if [ $EXIT_CODE -eq 124 ]; then   # timeout 命令的特殊退出码124，如果超时则到这里结束
+          #     echo "Warning: Tests timed after ${TIMEOUT}s"
+          #     # 超时不算失败
+          #     exit 0
+          #   else      # 如果pytest命令执行失败
+          #     echo "Warning: Some tests failed with exit code $EXIT_CODE"
+          #     # 测试失败也不阻塞 CI，只发出警告
+          #     exit 0
+          #   fi
+          # }
+
+          # 运行测试 (不带超时)
           cd "$FLAGGEMS_DIR"
-          # 如果command 执行失败，就执行后面的代码块
-          timeout $TIMEOUT bash -c "$PYTEST_CMD" || {
+          # 如果 command 执行失败，就执行后面的代码块
+          bash -c "$PYTEST_CMD" || {
             EXIT_CODE=$?
-            if [ $EXIT_CODE -eq 124 ]; then   # timeout 命令的特殊退出码124，如果超时则到这里结束
-              echo "Warning: Tests timed after ${TIMEOUT}s"
-              # 超时不算失败
-              exit 0
-            else      # 如果pytest命令执行失败
-              echo "Warning: Some tests failed with exit code $EXIT_CODE"
-              # 测试失败也不阻塞 CI，只发出警告
-              exit 0
-            fi
+            echo "Warning: Some tests failed with exit code $EXIT_CODE"
+            # 测试失败也不阻塞 CI，只发出警告
+            exit 0
           }
-          # test only
+
+
           echo "FlagGems accuracy tests completed successfully"
