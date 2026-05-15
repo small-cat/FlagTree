@@ -1,0 +1,11 @@
+# FlagGems NVIDIA 后端忽略列表
+# 每行一个测试文件名 (相对于 tests/ 目录)
+# 以 # 开头的行为注释，空行会被跳过
+#
+# 格式示例:
+# test_norm_ops.py
+# test_some_problematic_test.py
+
+# 以下是一些可能需要忽略的测试示例 (根据实际情况修改)
+# test_norm_ops.py
+# test_flash_attn.py
