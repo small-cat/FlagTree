@@ -69,6 +69,15 @@ TLE 的主要优势包括：
 
 详细设计、API 与示例请参考 [TLE Wiki](https://github.com/flagos-ai/FlagTree/wiki/TLE) 和 [TLE-Raw Wiki](https://github.com/flagos-ai/FlagTree/wiki/TLE-Raw)。
 
+## 性能改进
+
+无需修改任何 Triton 算子代码，FlagTree 可在实际模型中的某些形状上获得性能增益。
+下面以 Qwen 模型中调用的一些形状下的 mm 算子为例，展示 FlagTree 在不同芯片上的性能增益。
+
+<img width="275" height="253" alt="nv_h100_bf16_mm_1a" src=".github/assets/nv_h100_bf16_mm_1a.png" />  <img width="275" height="253" alt="nv_h100_fp32_mm_1a" src=".github/assets/nv_h100_fp32_mm_1a.png" />
+<img width="275" height="253" alt="hcu_bf16_mm_1a" src=".github/assets/hcu_bf16_mm_1a.png" />  <img width="275" height="253" alt="hcu_fp32_mm_1a" src=".github/assets/hcu_fp32_mm_1a.png" />
+<img width="275" height="253" alt="hcu_bf16_mm_3d" src=".github/assets/hcu_bf16_mm_3d.png" />  <img width="275" height="253" alt="hcu_fp32_mm_3d" src=".github/assets/hcu_fp32_mm_3d.png" />
+
 ## 新特性
 
 * 2026/05/12 [mthreads](https://github.com/flagos-ai/FlagTree/tree/triton_v3.6.x/third_party/mthreads/) 后端升级到 Triton 3.6，加入 CI/CD。
@@ -108,7 +117,7 @@ TLE 的主要优势包括：
 
 ## 环境准备
 
-避免环境匹配问题的最佳实践是使用 [多后端支持](#多后端支持) 表格中推荐的镜像。
+避免环境匹配问题的最佳实践是使用上文 [多后端支持](#多后端支持) 表格中推荐的镜像。
 
 ## 从源码安装
 
