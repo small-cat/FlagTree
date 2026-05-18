@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '0 21 * * *'
   pull_request:
-    branches: [ "triton_v3.4.x", "triton_v3.5.x", "triton_v3.6.x", "triton_v3.6.x_test_base_branch"]
+    branches: [ "triton_v3.4.x", "triton_v3.5.x", "triton_v3.6.x"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -27,7 +27,18 @@ jobs:
         - /mnt/airs-business/cicd:/mnt/airs-business/cicd
         - /home/secure/flagcicd-flagGems-test:/home/secure/flagcicd-flagGems-test
 
-    if: ${{ github.repository == 'FlagTree/flagtree' || github.repository == 'flagos-ai/flagtree' }}
+    # '>' symbol folding multiple lines of text into a single line (newline characters will be replaced with spaces)
+    #  If the push event is triggered by a pull request merge commit, skip this workflow run.
+    if: >
+      (github.repository == 'FlagTree/flagtree' || github.repository == 'flagos-ai/flagtree') &&
+      !(
+        github.event_name == 'push' && 
+        (
+          startsWith(github.event.head_commit.message, 'Merge pull request') || 
+          contains(github.event.head_commit.message, '(#') ||
+          github.event.head_commit.committer.email == 'noreply@github.com'
+        )
+      )
     steps:
       - name: Smart Checkout
         uses: flagos-ai/FlagTree/.github/actions/smart-checkout@main
@@ -82,6 +93,7 @@ jobs:
           mkdir -p "${FLAGGEMS_BASE}" "${CONFIG_DIR}" "${SCRIPTS_DIR}"
 
           cd "${FLAGGEMS_BASE}"
+          rm -rf ./FlagGems
           git clone https://github.com/flagos-ai/FlagGems.git
 
           cd "${SCRIPTS_DIR}"
