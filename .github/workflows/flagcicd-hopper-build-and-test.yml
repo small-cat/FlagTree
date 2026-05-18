@@ -94,7 +94,12 @@ jobs:
 
           # 安装 FlagGems 依赖
           cd "$FLAGGEMS_DIR"
-          pip install -e . --no-build-isolation 2>/dev/null || true
+          pip list
+          pip install -e . --no-build-isolation
+          if [ $? -ne 0 ]; then
+              echo "Error: Failed to install FlagGems"
+              exit 1
+          fi
 
           pip install --no-cache-dir pyyaml==6.0.2
           # 生成 pytest marks 参数
