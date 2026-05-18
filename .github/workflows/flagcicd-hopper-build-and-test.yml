@@ -174,7 +174,7 @@ jobs:
               main()
           EOF
           chmod +x parse_operators.py 
-          
+          cat parse_operators.py
           exit 1
 
           if [ ! -d "$FLAGGEMS_DIR" ]; then
