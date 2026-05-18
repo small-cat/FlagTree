@@ -191,7 +191,7 @@ jobs:
               exit 1
           fi
 
-          pip install --no-cache-dir pyyaml==6.0.2
+          # pip install --no-cache-dir pyyaml==6.0.2
           # 生成 pytest marks 参数
           MARKS=$(python3  "${SCRIPTS_DIR}/parse_operators.py"  "$OPERATORS_YAML")
           if [ -z "$MARKS" ]; then
