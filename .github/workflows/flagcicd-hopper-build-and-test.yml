@@ -58,7 +58,7 @@ jobs:
 
 
       - name: FlagTree Build on NVidia (triton_v3.6.x branch)
-        if: ${{ steps.check_backend.outputs.should_skip != 'true' && env.TARGET_BRANCH == 'triton_v3.6.x_test_base_branch' }}
+        if: ${{ steps.check_backend.outputs.should_skip != 'true' && env.TARGET_BRANCH == 'triton_v3.6.x_test_base_branc' }}
         shell: bash
         run: |
           set -x
@@ -71,33 +71,14 @@ jobs:
         shell: bash
         run: |
           set -x
-          # 定义路径(在共享文件系统里)
-          # FLAGGEMS_BASE="/home/secure/flagcicd-flagGems-test/nvidia"
-          # FLAGGEMS_DIR="${FLAGGEMS_BASE}/FlagGems"
-          # CONFIG_DIR="${FLAGGEMS_BASE}/config"
-          # SCRIPTS_DIR="/home/secure/flagcicd-flagGems-test/scripts"
-          # IGNORE_LIST="${CONFIG_DIR}/ignore_list.txt"
-          # OPERATORS_YAML="${FLAGGEMS_DIR}/conf/operators.yaml"
-
-          # pwd
-          # cd ..
-          # ls
-          # cd ..
-          # ls
-          # exit 1
-          # 检查 FlagGems 目录是否存在
-
-
-   
           FLAGGEMS_BASE="${GITHUB_WORKSPACE}/../nvidia"
           FLAGGEMS_DIR="${FLAGGEMS_BASE}/FlagGems"
           CONFIG_DIR="${FLAGGEMS_BASE}/config"
           SCRIPTS_DIR="${FLAGGEMS_BASE}/../scripts"
           IGNORE_LIST="${CONFIG_DIR}/ignore_list.txt"
-
           OPERATORS_YAML="${FLAGGEMS_DIR}/conf/operators.yaml"
 
-
+          echo "${FLAGGEMS_BASE}"   "${CONFIG_DIR}" "${SCRIPTS_DIR}" 
           mkdir -p "${FLAGGEMS_BASE}" "${CONFIG_DIR}" "${SCRIPTS_DIR}"
 
           cd "${FLAGGEMS_BASE}"
@@ -177,6 +158,8 @@ jobs:
           cat parse_operators.py
           exit 1
 
+
+
           if [ ! -d "$FLAGGEMS_DIR" ]; then
             echo "Error: FlagGems directory not found at $FLAGGEMS_DIR"
             echo "Please clone FlagGems repository to the shared storage first."
@@ -193,7 +176,7 @@ jobs:
           cd "$FLAGGEMS_DIR"
           pip install -r requirements/requirements_nvidia.txt
           pip list
-          pip install -v -e .
+          pip install -v -e .  --no-build-isolation
           if [ $? -ne 0 ]; then
               echo "Error: Failed to install FlagGems"
               exit 1
