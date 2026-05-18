@@ -156,9 +156,6 @@ jobs:
           EOF
           chmod +x parse_operators.py 
           cat parse_operators.py
-          exit 1
-
-
 
           if [ ! -d "$FLAGGEMS_DIR" ]; then
             echo "Error: FlagGems directory not found at $FLAGGEMS_DIR"
