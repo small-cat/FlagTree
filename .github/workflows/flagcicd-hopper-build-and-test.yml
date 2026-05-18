@@ -79,13 +79,19 @@ jobs:
           # IGNORE_LIST="${CONFIG_DIR}/ignore_list.txt"
           # OPERATORS_YAML="${FLAGGEMS_DIR}/conf/operators.yaml"
 
-          pwd
-          cd ..
-          ls
-          cd ..
-          ls
-          exit 1
+          # pwd
+          # cd ..
+          # ls
+          # cd ..
+          # ls
+          # exit 1
           # 检查 FlagGems 目录是否存在
+
+          cd .. 
+          pwd
+          git clone https://github.com/flagos-ai/FlagGems.git
+          exit 1
+
           if [ ! -d "$FLAGGEMS_DIR" ]; then
             echo "Error: FlagGems directory not found at $FLAGGEMS_DIR"
             echo "Please clone FlagGems repository to the shared storage first."
