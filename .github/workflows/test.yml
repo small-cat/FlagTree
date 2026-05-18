@@ -1,0 +1,31 @@
+name: flagcicd-Hopper-Build-And-Test
+
+on:
+  schedule:
+    - cron: '0 21 * * *'
+  push:
+    branches: [ "triton_v3.4.x", "triton_v3.5.x", "triton_v3.6.x", "triton_v3.6.x_test_base_branch"]
+  pull_request:
+    branches: [ "triton_v3.4.x", "triton_v3.5.x", "triton_v3.6.x", "triton_v3.6.x_test_base_branch"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flagcicd-hopper-build-and-test:
+    runs-on: ubuntu-latest
+    # '>' symbol folding multiple lines of text into a single line (newline characters will be replaced with spaces)
+    if: >
+      (github.repository == 'FlagTree/flagtree' || github.repository == 'flagos-ai/flagtree') &&
+      !(
+        github.event_name == 'push' && 
+        (
+          startsWith(github.event.head_commit.message, 'Merge pull request') || 
+          contains(github.event.head_commit.message, '(#')
+        )
+      )
+    steps:
+      - name: This is a pr
+        run: |
+          echo "pr success."
