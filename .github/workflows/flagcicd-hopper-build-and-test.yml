@@ -80,6 +80,9 @@ jobs:
           # OPERATORS_YAML="${FLAGGEMS_DIR}/conf/operators.yaml"
 
           pwd
+          cd ..
+          ls
+          cd ..
           ls
           exit 1
           # 检查 FlagGems 目录是否存在
