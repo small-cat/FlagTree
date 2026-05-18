@@ -16,17 +16,17 @@ jobs:
   pr_test:
     runs-on: ubuntu-latest
     # '>' symbol folding multiple lines of text into a single line (newline characters will be replaced with spaces)
-    ####
+    #  If the push event is triggered by a pull request merge commit, skip this workflow run.
     if: >
       (github.repository == 'FlagTree/flagtree' || github.repository == 'flagos-ai/flagtree') &&
       !(
         github.event_name == 'push' && 
         (
           startsWith(github.event.head_commit.message, 'Merge pull request') || 
-          contains(github.event.head_commit.message, '(#')
+          contains(github.event.head_commit.message, '(#') ||
+          github.event.head_commit.committer.email == 'noreply@github.com'
         )
       )
-    #####
     steps:
       - name: This is a pr
         run: |
