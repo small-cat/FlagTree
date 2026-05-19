@@ -27,18 +27,7 @@ jobs:
         - /mnt/airs-business/cicd:/mnt/airs-business/cicd
         - /home/secure/flagcicd-flagGems-test:/home/secure/flagcicd-flagGems-test
 
-    # '>' symbol folding multiple lines of text into a single line (newline characters will be replaced with spaces)
-    #  If the push event is triggered by a pull request merge commit, skip this workflow run.
-    if: >
-      (github.repository == 'FlagTree/flagtree' || github.repository == 'flagos-ai/flagtree') &&
-      !(
-        github.event_name == 'push' && 
-        (
-          startsWith(github.event.head_commit.message, 'Merge pull request') || 
-          contains(github.event.head_commit.message, '(#') ||
-          github.event.head_commit.committer.email == 'noreply@github.com'
-        )
-      )
+    if: ${{ github.repository == 'FlagTree/flagtree' || github.repository == 'flagos-ai/flagtree' }}
     steps:
       - name: Smart Checkout
         uses: flagos-ai/FlagTree/.github/actions/smart-checkout@main
@@ -191,7 +180,7 @@ jobs:
               exit 1
           fi
 
-          pip install --no-cache-dir pyyaml==6.0.3
+          # pip install --no-cache-dir pyyaml==6.0.3
           # 生成 pytest marks 参数
           MARKS=$(python3  "${SCRIPTS_DIR}/parse_operators.py"  "$OPERATORS_YAML")
           if [ -z "$MARKS" ]; then
