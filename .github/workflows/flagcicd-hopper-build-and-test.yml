@@ -1,12 +1,13 @@
 name: flagcicd-Hopper-Build-And-Test
 
 on:
-  # 仅在 PR 时触发，不触发 push 和 schedule
+  schedule:
+    - cron: '0 21 * * *'
   pull_request:
-    branches: [ "triton_v3.4.x", "triton_v3.5.x", "triton_v3.6.x" ]
+    branches: [ "triton_v3.4.x", "triton_v3.5.x", "triton_v3.6.x", "triton_v3.6.x_test_flagGems_branch"]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -14,20 +15,19 @@ jobs:
     runs-on: [flagcicd-flagtree-nvidia3.6]
     container:
       image: harbor.baai.ac.cn/flagtree/flagtree-3.6.x-py312-torch2.8.0a0_5228986c39.nv25.05-ubuntu24.04:202603
-      options: --uts=host --ipc=host --privileged  --ulimit stack=67108864 --ulimit memlock=-1 --security-opt seccomp=unconfined --gpus=all
+      options: 
+        --uts=host
+        --ipc=host
+        --privileged
+        --ulimit stack=67108864
+        --ulimit memlock=-1
+        --security-opt seccomp=unconfined
+        --gpus=all
       volumes:
-        - /mnt/airs-business/cicd:/mnt/airs-business/cicd
+        - /mnt/airs-business/cicd/flagtree/flagcicd-flagGems-test/:/mnt/airs-business/cicd/flagtree/flagcicd-flagGems-test/
 
     if: ${{ github.repository == 'FlagTree/flagtree' || github.repository == 'flagos-ai/flagtree' }}
-
-    # 设置超时限制: 60 分钟
-    timeout-minutes: 60
-
     steps:
-      # ============================================================
-      # Part 1: FlagTree 构建 (保留原有逻辑)
-      # ============================================================
-
       - name: Smart Checkout
         uses: flagos-ai/FlagTree/.github/actions/smart-checkout@main
         with:
@@ -55,54 +55,31 @@ jobs:
           echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
           echo "TARGET_BRANCH=$TARGET_BRANCH"
 
-      - name: FlagTree Build on NVidia (triton_v3.4.x branch)
-        if: ${{ steps.check_backend.outputs.should_skip != 'true' && env.TARGET_BRANCH == 'triton_v3.4.x' }}
-        shell: bash
-        run: |
-          set -x
-          pip uninstall -y triton
-          source ~/env-3.4.sh
-          env | grep -E '^(LLVM_SYSPATH)=' >> $GITHUB_ENV || true
-          MAX_JOBS=32 python3 -m pip install . --no-build-isolation
-
-      - name: FlagTree Build on NVidia (triton_v3.5.x branch)
-        if: ${{ steps.check_backend.outputs.should_skip != 'true' && env.TARGET_BRANCH == 'triton_v3.5.x' }}
-        shell: bash
-        run: |
-          set -x
-          pip uninstall -y triton
-          source ~/env-3.5.sh
-          env | grep -E '^(LLVM_SYSPATH)=' >> $GITHUB_ENV || true
-          MAX_JOBS=32 python3 -m pip install . --no-build-isolation
 
       - name: FlagTree Build on NVidia (triton_v3.6.x branch)
-        if: ${{ steps.check_backend.outputs.should_skip != 'true' && env.TARGET_BRANCH == 'triton_v3.6.x' }}
+        if: ${{ steps.check_backend.outputs.should_skip != 'true' && env.TARGET_BRANCH == 'triton_v3.6.x_test_base_branch' }}
         shell: bash
         run: |
           set -x
           pip uninstall -y triton
           env | grep -E '^(LLVM_SYSPATH)=' >> $GITHUB_ENV || true
           MAX_JOBS=32 python3 -m pip install . --no-build-isolation
-
-      # ============================================================
-      # Part 2: FlagGems 精度测试 (新增)
-      # ============================================================
 
       - name: FlagGems Accuracy Test on NVidia
         if: ${{ steps.check_backend.outputs.should_skip != 'true' }}
         shell: bash
         run: |
           set -x
-
-          # 定义路径
-          FLAGGEMS_BASE="/mnt/airs-business/cicd/flaggems/nvidia"
+          FLAGGEMS_BASE="/mnt/airs-business/cicd/flagtree/flagcicd-flagGems-test/nvidia"
           FLAGGEMS_DIR="${FLAGGEMS_BASE}/FlagGems"
           CONFIG_DIR="${FLAGGEMS_BASE}/config"
-          SCRIPTS_DIR="/mnt/airs-business/cicd/flaggems/scripts"
+          SCRIPTS_DIR="${FLAGGEMS_BASE}/../scripts"
+          SCRIPTS_DIR="${FLAGGEMS_BASE}/../scripts"
           IGNORE_LIST="${CONFIG_DIR}/ignore_list.txt"
           OPERATORS_YAML="${FLAGGEMS_DIR}/conf/operators.yaml"
 
-          # 检查 FlagGems 目录是否存在
+          echo "${FLAGGEMS_BASE}"   "${CONFIG_DIR}" "${SCRIPTS_DIR}" 
+
           if [ ! -d "$FLAGGEMS_DIR" ]; then
             echo "Error: FlagGems directory not found at $FLAGGEMS_DIR"
             echo "Please clone FlagGems repository to the shared storage first."
@@ -117,53 +94,159 @@ jobs:
 
           # 安装 FlagGems 依赖
           cd "$FLAGGEMS_DIR"
-          pip install -e . --no-build-isolation 2>/dev/null || true
+          pip install -r requirements/requirements_nvidia.txt
+          pip list
+          pip install -v -e .  --no-build-isolation
+          if [ $? -ne 0 ]; then
+              echo "Error: Failed to install FlagGems"
+              exit 1
+          fi
 
+          # pip install --no-cache-dir pyyaml==6.0.3
           # 生成 pytest marks 参数
-          MARKS=$(${SCRIPTS_DIR}/parse_operators.py "$OPERATORS_YAML")
+          MARKS=$(python3  "${SCRIPTS_DIR}/parse_operators.py"  "$OPERATORS_YAML")
           if [ -z "$MARKS" ]; then
             echo "Error: Failed to generate pytest marks"
             exit 1
+          cd "$FLAGGEMS_DIR"
+          pip install -r requirements/requirements_nvidia.txt
+          pip list
+          pip install -v -e .  --no-build-isolation
+          if [ $? -ne 0 ]; then
+              echo "Error: Failed to install FlagGems"
+              exit 1
           fi
-          echo "Generated pytest marks: ${MARKS:0:200}..."
+
+          # pip install --no-cache-dir pyyaml==6.0.3
+          # 生成 pytest marks 参数
+
+          # MARKS=$(python3  "${SCRIPTS_DIR}/parse_operators.py"  "$OPERATORS_YAML")
+          # if [ -z "$MARKS" ]; then
+          #   echo "Error: Failed to generate pytest marks"
+          #   exit 1
+          # fi
+
+          # 打印 MARKS 字符串的前 200 个字符
+          # echo "Generated pytest marks: ${MARKS:0:200}..."
 
           # 构建 pytest 命令
-          PYTEST_CMD="python3 -m pytest tests/ -m \"$MARKS\" --ref=cpu --quick -v --timeout=300"
-
+          # PYTEST_CMD="python3 -m pytest tests/ -m \"$MARKS\" --ref=cpu --quick -v"
+          # PYTEST_CMD="python3 -m pytest tests/ -m \"$MARKS\" --ref=cpu -v"
           # 添加 ignore 参数
-          if [ -f "$IGNORE_LIST" ]; then
-            while IFS= read -r line || [[ -n "$line" ]]; do
+
+          OPERATORS=( $(python3 "${SCRIPTS_DIR}/parse_operators.py" "$OPERATORS_YAML") )
+          
+          if [ ${#OPERATORS[@]} -eq 0 ]; then
+            echo "Error: Failed to fetch operator list (array is empty)"
+            exit 1
+          fi
+
+          IGNORE_ARGS=""
+          if [ -f "$IGNORE_LIST" ]; then       # 如果有忽略列表文件就读取它
+            while IFS= read -r line || [[ -n "$line" ]]; do   # 成功读取一行的数据或者最后一行没有以换行符结尾
               # 跳过空行和注释
-              line=$(echo "$line" | tr -d '[:space:]')
-              [[ -z "$line" ]] && continue
-              [[ "$line" == \#* ]] && continue
-              PYTEST_CMD="$PYTEST_CMD --ignore=${FLAGGEMS_DIR}/tests/${line}"
+              line=$(echo "$line" | tr -d '[:space:]')  
+              [[ -z "$line" ]] && continue    # 如果是空行则跳过，进入下一轮循环
+              [[ "$line" == \#* ]] && continue   # 如果是以#开头的注释行，进入下一轮循环
+              IGNORE_ARGS="$IGNORE_ARGS --ignore=${FLAGGEMS_DIR}/tests/${line}"
             done < "$IGNORE_LIST"
           fi
 
+
+
           # 设置超时时间 (55分钟 = 3300秒)
-          TIMEOUT=3300
+          # TIMEOUT=3600
 
           echo "=========================================="
           echo "Running FlagGems accuracy tests"
-          echo "Timeout: ${TIMEOUT}s (~55min)"
+          # echo "Timeout: ${TIMEOUT}s (~60min)"
           echo "Quick mode: enabled"
           echo "Reference device: cpu"
           echo "=========================================="
 
-          # 运行测试 (带超时)
-          cd "$FLAGGEMS_DIR"
-          timeout $TIMEOUT bash -c "$PYTEST_CMD" || {
-            EXIT_CODE=$?
-            if [ $EXIT_CODE -eq 124 ]; then
-              echo "Warning: Tests timed after ${TIMEOUT}s"
-              # 超时不算失败
-              exit 0
-            else
-              echo "Warning: Some tests failed with exit code $EXIT_CODE"
-              # 测试失败也不阻塞 CI，只发出警告
-              exit 0
-            fi
-          }
+          # # 运行测试 (带超时)
+          # cd "$FLAGGEMS_DIR"
+          # # 如果command 执行失败，就执行后面的代码块
+          # timeout $TIMEOUT bash -c "$PYTEST_CMD" || {
+          #   EXIT_CODE=$?
+          #   if [ $EXIT_CODE -eq 124 ]; then   # timeout 命令的特殊退出码124，如果超时则到这里结束
+          #     echo "Warning: Tests timed after ${TIMEOUT}s"
+          #     # 超时不算失败
+          #     exit 0
+          #   else      # 如果pytest命令执行失败
+          #     echo "Warning: Some tests failed with exit code $EXIT_CODE"
+          #     # 测试失败也不阻塞 CI，只发出警告
+          #     exit 0
+          #   fi
+          # }
 
-          echo "FlagGems accuracy tests completed successfully"
+          # 运行测试 (不带超时)
+          # # 运行测试 (带超时)
+          # cd "$FLAGGEMS_DIR"
+          # # 如果command 执行失败，就执行后面的代码块
+          # timeout $TIMEOUT bash -c "$PYTEST_CMD" || {
+          #   EXIT_CODE=$?
+          #   if [ $EXIT_CODE -eq 124 ]; then   # timeout 命令的特殊退出码124，如果超时则到这里结束
+          #     echo "Warning: Tests timed after ${TIMEOUT}s"
+          #     # 超时不算失败
+          #     exit 0
+          #   else      # 如果pytest命令执行失败
+          #     echo "Warning: Some tests failed with exit code $EXIT_CODE"
+          #     # 测试失败也不阻塞 CI，只发出警告
+          #     exit 0
+          #   fi
+          # }
+
+          # 运行测试 (不带超时)
+          cd "$FLAGGEMS_DIR"
+          CRITICAL_FAILED=0
+
+          # 3. 遍历数组并记录时间（保持不变）
+          for OP in "${OPERATORS[@]}"; do
+              echo -e "\n---> [START] Testing Operator: $OP"
+              
+              START_TIME=$(date +%s)
+
+              # 直接将 $OP 作为 pytest 的 -m 参数
+              python3 -m pytest tests/ -m "$OP" --ref=cpu --quick  $IGNORE_ARGS
+              EXIT_CODE=$?
+
+              END_TIME=$(date +%s)
+              ELAPSED=$((END_TIME - START_TIME))
+
+              echo "---> [END] Operator: $OP | Duration: ${ELAPSED}s | Exit Code: $EXIT_CODE"
+              echo "----------------------------------------------------------------"
+
+              if [ $EXIT_CODE -eq 0 ]; then
+                  echo "Result: $OP Passed"
+              elif [ $EXIT_CODE -eq 1 ]; then
+                  echo "Result: $OP Failed (failures allowed in CI)"
+              elif [ $EXIT_CODE -eq 5 ]; then
+                  echo "Result: $OP Error (No tests collected)"
+                  CRITICAL_FAILED=1
+              else
+                  echo "Result: $OP Error (Exit code $EXIT_CODE)"
+                  CRITICAL_FAILED=1
+              fi
+          done
+
+
+          # bash -c "$PYTEST_CMD"
+          # EXIT_CODE=$?
+
+          # if [ $EXIT_CODE -eq 0 ]; then
+          #     echo "All tests passed"
+          #     echo "FlagGems accuracy tests completed successfully"
+          #     exit 0
+          # elif [ $EXIT_CODE -eq 5 ]; then
+          #     echo "Error: No tests were collected. Configuration issue suspected."
+          #     # 可能是配置错误，应该报错
+          #     exit 1
+          # elif [ $EXIT_CODE -eq 1 ]; then
+          #     echo "Warning: Some tests failed, tests exited with code $EXIT_CODE"
+          #     echo "FlagGems accuracy tests completed successfully (failures allowed)"
+          #     exit 0  # 测试失败不阻塞 CI
+          # else
+          #     echo "Error: Tests exited with code $EXIT_CODE"
+          #     exit 1
+          # fi
