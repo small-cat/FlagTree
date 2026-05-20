@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '0 21 * * *'
   pull_request:
-    branches: [ "triton_v3.4.x", "triton_v3.5.x", "triton_v3.6.x", "triton_v3.6.x_test_flagGems_branch"]
+    branches: [ "triton_v3.4.x", "triton_v3.5.x", "triton_v3.6.x", "triton_v3.6_test_flagGems"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -57,7 +57,7 @@ jobs:
 
 
       - name: FlagTree Build on NVidia (triton_v3.6.x branch)
-        if: ${{ steps.check_backend.outputs.should_skip != 'true' && env.TARGET_BRANCH == 'triton_v3.6.x_test_base_branch' }}
+        if: ${{ steps.check_backend.outputs.should_skip != 'true' && env.TARGET_BRANCH == 'triton_v3.6_test_flagGems' }}
         shell: bash
         run: |
           set -x
