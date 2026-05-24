@@ -3,6 +3,7 @@ add_triton_library(TritonToHIVM
 
   DEPENDS
   TritonToHIVMConversionPassIncGen
+  TritonCanonicalizeIncGen
 
   LINK_LIBS
   BiShengIRHIVMDialect
