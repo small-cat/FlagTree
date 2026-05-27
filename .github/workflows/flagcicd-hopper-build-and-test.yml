@@ -266,7 +266,7 @@ PY
         shell: bash
         run: |
           echo "=========================================="
-          echo "📊 本地解析测试结果 (test-results/*.xml)"
+          echo "📊 Parsing local test results (test-results/*.xml)"
           echo "=========================================="
 
           python3 -c "
@@ -277,7 +277,7 @@ PY
           base = '${{ github.workspace }}/test-results'
           xml_files = glob.glob(os.path.join(base, '**', '*.xml'), recursive=True)
           if not xml_files:
-              print('⚠️ 未找到测试结果 xml 文件，可能测试步骤发生崩溃未生成。')
+              print('⚠️ No test result XML files found. Tests may have crashed before generating outputs.')
               raise SystemExit(0)
 
           failures = []
@@ -285,7 +285,7 @@ PY
               try:
                   root = ET.parse(path).getroot()
               except Exception as e:
-                  print(f'⚠️ 解析失败: {path} -> {e}')
+                  print(f'⚠️ Parse failed: {path} -> {e}')
                   continue
 
               for testcase in root.iter('testcase'):
@@ -295,10 +295,10 @@ PY
                       failures.append(f'{class_name} :: {operator_name}')
 
           if failures:
-              print('\n❌ 失败的算子列表:')
+              print('\n❌ Failed operators:')
               for item in sorted(set(failures)):
                   print(f'  - {item}')
           else:
-              print('\n✅ 所有测试的算子均已通过！')
+              print('\n✅ All tested operators passed!')
           "
           echo "=========================================="
