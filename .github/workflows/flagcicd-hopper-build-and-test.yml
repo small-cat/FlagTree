@@ -1,0 +1,301 @@
+name: flagcicd-Hopper-Build-And-Test
+
+on:
+  schedule:
+    - cron: '0 21 * * *'
+  pull_request:
+    branches: [ "triton_v3.4.x", "triton_v3.5.x", "triton_v3.6.x", "triton_v3.6_test_flagGems" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flagcicd-hopper-build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - test_profile: pr-smoke
+            trigger_event: pull_request
+            shard_index: 0
+            shard_count: 2
+            include_heavy: "false"
+            max_ops: 24
+            batch_size: 4
+          - test_profile: pr-smoke
+            trigger_event: pull_request
+            shard_index: 1
+            shard_count: 2
+            include_heavy: "false"
+            max_ops: 24
+            batch_size: 4
+          - test_profile: nightly-full
+            trigger_event: schedule
+            shard_index: 0
+            shard_count: 4
+            include_heavy: "true"
+            max_ops: 0
+            batch_size: 4
+          - test_profile: nightly-full
+            trigger_event: schedule
+            shard_index: 1
+            shard_count: 4
+            include_heavy: "true"
+            max_ops: 0
+            batch_size: 4
+          - test_profile: nightly-full
+            trigger_event: schedule
+            shard_index: 2
+            shard_count: 4
+            include_heavy: "true"
+            max_ops: 0
+            batch_size: 4
+          - test_profile: nightly-full
+            trigger_event: schedule
+            shard_index: 3
+            shard_count: 4
+            include_heavy: "true"
+            max_ops: 0
+            batch_size: 4
+
+    runs-on: [flagcicd-flagtree-nvidia3.6]
+    if: >-
+      ${{
+        (github.repository == 'FlagTree/flagtree' || github.repository == 'flagos-ai/flagtree') &&
+        matrix.trigger_event == github.event_name
+      }}
+    env:
+      TRITON_CACHE_DIR: /mnt/airs-business/cicd/flagtree/flagcicd-flagGems-test/nvidia/triton_cache
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+      VECLIB_MAXIMUM_THREADS: "1"
+      PYTORCH_CUDA_ALLOC_CONF: "expandable_segments:True,max_split_size_mb:128"
+    container:
+      image: harbor.baai.ac.cn/flagtree/flagtree-py312-torch2.8.0a0_5228986c39.nv25.05-ubuntu24.04:202605-3.6-base
+      options:
+        --uts=host
+        --ipc=host
+        --privileged
+        --ulimit stack=67108864
+        --ulimit memlock=-1
+        --security-opt seccomp=unconfined
+        --gpus=all
+      volumes:
+        - /mnt/airs-business/cicd/flagtree/flagcicd-flagGems-test/:/mnt/airs-business/cicd/flagtree/flagcicd-flagGems-test/
+
+    steps:
+      - name: Smart Checkout
+        uses: flagos-ai/FlagTree/.github/actions/smart-checkout@main
+        with:
+          checkout_version: 'v6'
+
+      - name: Set safe directory
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Check if backend-relevant files changed
+        id: check_backend
+        uses: flagos-ai/FlagTree/.github/actions/check-backend-changed@main
+        with:
+          backend: nvidia
+
+      - name: Detect Target Branch
+        shell: bash
+        run: |
+          set -x
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            TARGET_BRANCH="${{ github.base_ref }}"
+          else
+            TARGET_BRANCH="${{ github.ref_name }}"
+          fi
+          echo "TARGET_BRANCH=$TARGET_BRANCH" >> "$GITHUB_ENV"
+          echo "TARGET_BRANCH=$TARGET_BRANCH"
+
+      - name: FlagTree Build on NVidia (triton_v3.6.x branch)
+        if: ${{ steps.check_backend.outputs.should_skip != 'true' && env.TARGET_BRANCH == 'triton_v3.6_test_flagGems' }}
+        shell: bash
+        run: |
+          set -x
+          pip uninstall -y triton
+          env | grep -E '^(LLVM_SYSPATH)=' >> "$GITHUB_ENV" || true
+          MAX_JOBS=32 python3 -m pip install . --no-build-isolation
+
+      - name: FlagGems Accuracy Test on NVidia (${{ matrix.test_profile }} shard ${{ matrix.shard_index }}/${{ matrix.shard_count }})
+        if: ${{ steps.check_backend.outputs.should_skip != 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          set -x
+          FLAGGEMS_BASE="/mnt/airs-business/cicd/flagtree/flagcicd-flagGems-test/nvidia"
+          FLAGGEMS_DIR="${FLAGGEMS_BASE}/FlagGems"
+          CONFIG_DIR="${FLAGGEMS_BASE}/config"
+          SCRIPTS_DIR="${FLAGGEMS_BASE}/../scripts"
+          IGNORE_LIST="${CONFIG_DIR}/ignore_list.txt"
+          OPERATORS_YAML="${FLAGGEMS_DIR}/conf/operators.yaml"
+          RESULTS_DIR="${GITHUB_WORKSPACE}/test-results/${{ matrix.test_profile }}-shard-${{ matrix.shard_index }}"
+
+          if [ ! -d "$FLAGGEMS_DIR" ]; then
+            echo "Error: FlagGems directory not found at $FLAGGEMS_DIR"
+            exit 1
+          fi
+
+          if [ ! -f "$OPERATORS_YAML" ]; then
+            echo "Error: operators.yaml not found at $OPERATORS_YAML"
+            exit 1
+          fi
+
+          cd "$FLAGGEMS_DIR"
+          pip list
+          pip install -v -e . --no-build-isolation
+
+          MARKS="$(python3 "${SCRIPTS_DIR}/parse_operators.py" "$OPERATORS_YAML")"
+          if [ -z "$MARKS" ]; then
+            echo "Error: Failed to generate pytest marks"
+            exit 1
+          fi
+
+          mapfile -t SHARD_OPS < <(
+            python3 - "${MARKS}" "${{ matrix.include_heavy }}" "${{ matrix.max_ops }}" "${{ matrix.shard_index }}" "${{ matrix.shard_count }}" <<'PY'
+import re
+import sys
+
+marks, include_heavy, max_ops, shard_idx, shard_cnt = sys.argv[1:]
+ops = []
+for token in re.split(r"\s+or\s+", marks):
+    op = token.strip().strip("()")
+    if op:
+        ops.append(op)
+ops = list(dict.fromkeys(ops))
+
+if include_heavy != "true":
+    heavy_keywords = ("mm", "matmul", "conv", "attention", "flash", "sdpa")
+    ops = [op for op in ops if not any(k in op.lower() for k in heavy_keywords)]
+    max_ops_i = int(max_ops)
+    if max_ops_i > 0:
+        ops = ops[:max_ops_i]
+
+shard_idx_i = int(shard_idx)
+shard_cnt_i = int(shard_cnt)
+selected = [op for i, op in enumerate(ops) if i % shard_cnt_i == shard_idx_i]
+print("\n".join(selected))
+PY
+          )
+
+          if [ "${#SHARD_OPS[@]}" -eq 0 ]; then
+            echo "No operators selected for this shard; skip."
+            exit 0
+          fi
+
+          IGNORE_ARGS=()
+          if [ -f "$IGNORE_LIST" ]; then
+            while IFS= read -r line || [ -n "$line" ]; do
+              line="$(echo "$line" | tr -d '[:space:]')"
+              [ -z "$line" ] && continue
+              [[ "$line" == \#* ]] && continue
+              IGNORE_ARGS+=("--ignore=${FLAGGEMS_DIR}/tests/${line}")
+            done < "$IGNORE_LIST"
+          fi
+
+          mkdir -p "$RESULTS_DIR"
+
+          FAILED_CRITICAL=0
+          FAILED_ALLOWED=0
+          BATCH_SIZE=${{ matrix.batch_size }}
+          TOTAL_OPS=${#SHARD_OPS[@]}
+
+          echo "=========================================="
+          echo "Running FlagGems accuracy tests"
+          echo "Profile: ${{ matrix.test_profile }}"
+          echo "Shard: ${{ matrix.shard_index }}/${{ matrix.shard_count }}"
+          echo "Operators in shard: ${TOTAL_OPS}"
+          echo "Batch size: ${BATCH_SIZE}"
+          echo "Reference device: cpu"
+          echo "=========================================="
+
+          for ((i=0; i<TOTAL_OPS; i+=BATCH_SIZE)); do
+            BATCH_OPS=( "${SHARD_OPS[@]:i:BATCH_SIZE}" )
+            BATCH_MARKS="$(IFS=' or '; echo "${BATCH_OPS[*]}")"
+            BATCH_NO=$((i / BATCH_SIZE + 1))
+            JUNIT_FILE="${RESULTS_DIR}/test-results-batch-${BATCH_NO}.xml"
+
+            BATCH_EXIT=0
+            python3 -m pytest tests/ \
+              -m "$BATCH_MARKS" \
+              --ref=cpu \
+              --quick \
+              -v \
+              -p no:xdist \
+              --junitxml="$JUNIT_FILE" \
+              "${IGNORE_ARGS[@]}" || BATCH_EXIT=$?
+
+            if [ "$BATCH_EXIT" -eq 0 ]; then
+              echo "Batch ${BATCH_NO}: passed"
+            elif [ "$BATCH_EXIT" -eq 1 ]; then
+              echo "Batch ${BATCH_NO}: failed tests (allowed in CI)"
+              FAILED_ALLOWED=1
+            elif [ "$BATCH_EXIT" -eq 5 ]; then
+              echo "Batch ${BATCH_NO}: no tests collected"
+              FAILED_CRITICAL=1
+            else
+              echo "Batch ${BATCH_NO}: critical error (exit ${BATCH_EXIT})"
+              FAILED_CRITICAL=1
+            fi
+          done
+
+          chmod -R 777 "${GITHUB_WORKSPACE}/test-results" || true
+
+          if [ "$FAILED_CRITICAL" -ne 0 ]; then
+            echo "Error: Critical failures detected in one or more batches."
+            exit 1
+          fi
+
+          if [ "$FAILED_ALLOWED" -ne 0 ]; then
+            echo "Warning: Some tests failed, but failures are allowed for this workflow."
+          fi
+
+          echo "FlagGems accuracy tests completed."
+
+      - name: Print Failed Operators Locally
+        if: always() && steps.check_backend.outputs.should_skip != 'true'
+        shell: bash
+        run: |
+          echo "=========================================="
+          echo "📊 本地解析测试结果 (test-results/*.xml)"
+          echo "=========================================="
+
+          python3 -c "
+          import glob
+          import os
+          import xml.etree.ElementTree as ET
+
+          base = '${{ github.workspace }}/test-results'
+          xml_files = glob.glob(os.path.join(base, '**', '*.xml'), recursive=True)
+          if not xml_files:
+              print('⚠️ 未找到测试结果 xml 文件，可能测试步骤发生崩溃未生成。')
+              raise SystemExit(0)
+
+          failures = []
+          for path in xml_files:
+              try:
+                  root = ET.parse(path).getroot()
+              except Exception as e:
+                  print(f'⚠️ 解析失败: {path} -> {e}')
+                  continue
+
+              for testcase in root.iter('testcase'):
+                  if testcase.find('failure') is not None or testcase.find('error') is not None:
+                      operator_name = testcase.get('name', 'Unknown')
+                      class_name = testcase.get('classname', 'Unknown')
+                      failures.append(f'{class_name} :: {operator_name}')
+
+          if failures:
+              print('\n❌ 失败的算子列表:')
+              for item in sorted(set(failures)):
+                  print(f'  - {item}')
+          else:
+              print('\n✅ 所有测试的算子均已通过！')
+          "
+          echo "=========================================="
