@@ -30,6 +30,27 @@ jobs:
 
     if: ${{ github.repository == 'FlagTree/flagtree' || github.repository == 'flagos-ai/flagtree' }}
     steps:
+
+      - name: Initialize Shared NFS Cache
+        run: |
+          # 这是 NFS 上的共享目录
+          SHARED_CACHE_DIR="/mnt/airs-business/cicd/flagtree/flagcicd-flagGems-test/nvidia/triton_cache"
+          
+          # 创建目录（-p 保证如果已存在不会报错）
+          mkdir -p "$SHARED_CACHE_DIR"
+          
+          # 检查共享盘里是否有 nvidia 缓存目录
+          # ~/.triton 代表当前容器 root 用户的家目录，也就是镜像里自带的文件
+          if [ ! -d "$SHARED_CACHE_DIR/nvidia" ]; then
+            echo "[CI] NFS shared cache is empty. Seeding from Docker image..."
+            # 将镜像自带的缓存复制到 NFS 盘。使用 -a 保持权限和属性。
+            # 注意 ~/.triton/. 后面的点号，表示复制目录下的所有内容
+            cp -a ~/.triton/. "$SHARED_CACHE_DIR/"
+            echo "Seed complete!"
+          else
+            echo "[CI] NFS shared cache already exists. Skipping seed."
+          fi
+  
       - name: Smart Checkout
         uses: flagos-ai/FlagTree/.github/actions/smart-checkout@main
         with:
@@ -64,7 +85,7 @@ jobs:
         run: |
           set -x
           pip uninstall -y triton
-          ls ~/.triton
+          ls /root/.triton
           exit 0
           env | grep -E '^(LLVM_SYSPATH)=' >> $GITHUB_ENV || true
           MAX_JOBS=32 python3 -m pip install . --no-build-isolation
