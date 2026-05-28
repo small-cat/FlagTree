@@ -127,11 +127,6 @@ jobs:
           PYTEST_CMD="python3 -m pytest tests/ -m \"$MARKS\" --ref=cpu --quick -v -p dynamic_ignore"
           # =========================================================
 
-          
-
-          # Build the pytest command
-          PYTEST_CMD="python3 -m pytest tests/ -m \"$MARKS\" --ref=cpu --quick -v ${IGNORE_ARGS}"
-
           exit 1
 
           echo "=========================================="
