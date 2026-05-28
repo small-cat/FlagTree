@@ -64,8 +64,6 @@ jobs:
         run: |
           set -x
           pip uninstall -y triton
-          ls /root/.triton
-          exit 0
           env | grep -E '^(LLVM_SYSPATH)=' >> $GITHUB_ENV || true
           MAX_JOBS=32 python3 -m pip install . --no-build-isolation
 
