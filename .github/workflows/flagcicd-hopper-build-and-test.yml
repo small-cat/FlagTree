@@ -61,6 +61,7 @@ jobs:
         shell: bash
         run: |
           set -x
+          whoami
           ls ~/.triton/
           du -sh ~/.triton/nvidia/nvcc/cuda_nvcc-linux-x86_64-12.8.93-archive
           exit 0
