@@ -102,6 +102,14 @@ def post_install():
         pass
 
 
+def write_flagtree_backend_file(triton_pkg_dir=None):
+    if triton_pkg_dir is None:
+        triton_pkg_dir = Path(__file__).resolve().parents[1] / "triton"
+    backend_value = os.environ.get("FLAGTREE_BACKEND", "")
+    dest_file = Path(triton_pkg_dir) / "FLAGTREE_BACKEND"
+    dest_file.write_text(backend_value)
+
+
 class FlagTreeCache:
 
     def __init__(self):
