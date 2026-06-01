@@ -23,6 +23,8 @@
   </a>
 </div>
 
+<img width="90" height="514" alt="FlagTree" src=".github/assets/FlagTree.png" />
+
 FlagTree 是 [FlagOS](https://flagos.io/) 的一部分。
 FlagOS 是一个面向多元AI芯片的开源、统一系统软件栈，旨在打通模型、系统与芯片层，培育开放协作的生态系统。
 它支持 “一次开发，多芯运行” 的工作流，兼容多样化的 AI 加速芯片。
@@ -82,6 +84,7 @@ TLE 的主要优势包括：
 
 ## 新特性
 
+* 2026/06/01 新增接入 [thrive](https://github.com/flagos-ai/FlagTree/tree/triton_v3.6.x/third_party/thrive/) 后端（对应 Triton 3.6），加入 CI/CD。
 * 2026/05/12 [mthreads](https://github.com/flagos-ai/FlagTree/tree/triton_v3.6.x/third_party/mthreads/) 后端升级到 Triton 3.6，加入 CI/CD。
 * 2026/05/07 [hcu](https://github.com/flagos-ai/FlagTree/tree/triton_v3.6.x/third_party/hcu/) 后端升级到 Triton 3.6，加入 CI/CD。
 * 2026/04/23 [mthreads](https://github.com/flagos-ai/FlagTree/tree/triton_v3.2.x/third_party/mthreads/) 后端升级到 Triton 3.2，加入 CI/CD。

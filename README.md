@@ -23,6 +23,8 @@
   </a>
 </div>
 
+<img width="90" height="514" alt="FlagTree" src=".github/assets/FlagTree.png" />
+
 FlagTree is part of [FlagOS](https://flagos.io/), a fully open-source system software stack designed to unify the model–system–chip layers and foster an open and collaborative ecosystem.
 It enables a "develop once, run anywhere" workflow across diverse AI accelerators,
 unlocking hardware performance, eliminating fragmentation among AI chipset-specific software stacks,
@@ -82,6 +84,7 @@ The following uses the mm operator under some shapes called in the Qwen model as
 
 ## Latest News
 
+* 2026/06/01 Added the [thrive](https://github.com/flagos-ai/FlagTree/tree/triton_v3.6.x/third_party/thrive/) backend integration (based on Triton 3.6) and added CI/CD.
 * 2026/05/12 Upgraded the [mthreads](https://github.com/flagos-ai/FlagTree/tree/triton_v3.6.x/third_party/mthreads/) backend to Triton 3.6 and added CI/CD.
 * 2026/05/07 Upgraded the [hcu](https://github.com/flagos-ai/FlagTree/tree/triton_v3.6.x/third_party/hcu/) backend to Triton 3.6 and added CI/CD.
 * 2026/04/24 Upgraded the [mthreads](https://github.com/flagos-ai/FlagTree/tree/triton_v3.2.x/third_party/mthreads/) backend to Triton 3.2 and added CI/CD.
