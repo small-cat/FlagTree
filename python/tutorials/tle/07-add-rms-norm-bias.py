@@ -156,6 +156,7 @@ def _torch_fused_add_rms_norm_with_bias(x, residual, weight, bias, eps):
 
 
 if enable_vllm:
+
     def _ascendc_add_rms_norm_bias(x, residual, weight, bias, eps):
         try:
             # vllm and vllm_ascend requires >= 0.17.0
@@ -278,11 +279,13 @@ def test_benchmark_add_rms_norm_with_bias(input_shape, residual_shape, weight_sh
     eps = 1e-5
 
     if enable_vllm:
+
         def _torch_op():
             _, _ = _ascendc_add_rms_norm_bias(inp, residual, weight, bias, eps)
 
         torch_time = do_bench_npu(lambda: _torch_op(), clear_l2_cache=True, keep_res=False, collect_prof=False)
     else:
+
         def _torch_op():
             _, _ = _torch_fused_add_rms_norm_with_bias(inp, residual, weight, bias, eps)
 
@@ -297,4 +300,3 @@ def test_benchmark_add_rms_norm_with_bias(input_shape, residual_shape, weight_sh
     print("[do_bench_npu] | {:<20} | {:<20} |".format("torch_time", "triton_time"))
     print(f"[do_bench_npu] | {torch_time:<20} | {triton_time:<20} |")
     print("-" * 80)
-
