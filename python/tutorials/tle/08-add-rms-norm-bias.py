@@ -113,11 +113,14 @@ def add_rms_norm_bias(x, residual, weight, bias: Optional[torch.Tensor] = None, 
     weight = weight.contiguous()
 
     def get_core_num():
-        import torch_npu  # noqa: F401
-        current_device = torch.npu.current_device()
-        torch.npu.set_device(current_device)
-        cores_dict = torch.npu.get_device_limit(current_device)
-        return cores_dict["vector_core_num"]
+        try:
+            import torch_npu  # noqa: F401
+            current_device = torch.npu.current_device()
+            torch.npu.set_device(current_device)
+            cores_dict = torch.npu.get_device_limit(current_device)
+            return cores_dict["vector_core_num"]
+        except:
+            return None
 
     CORES = 24 if get_core_num() is None else get_core_num()
 
