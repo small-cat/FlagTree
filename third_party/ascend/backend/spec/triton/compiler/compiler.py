@@ -137,7 +137,8 @@ class IRSource:
 def triton_key():
     import pkgutil
     TRITON_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    TRITON_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(TRITON_PATH))))  # spec -> triton
+    # TRITON_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(TRITON_PATH))))  # spec -> triton
+    TRITON_PATH = os.path.dirname(os.path.dirname(os.path.dirname(TRITON_PATH)))  # spec -> triton
     contents = []
     # frontend
     with open(__file__, "rb") as f:

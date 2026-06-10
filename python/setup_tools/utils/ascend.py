@@ -7,6 +7,22 @@ from tools import flagtree_root_dir, DownloadManager, Module  #noqa: E402
 downloader = DownloadManager()
 flagtree_submodule_dir = os.path.join(flagtree_root_dir, "third_party")
 
+triton_root = os.path.join(flagtree_root_dir, "python")
+# create a link for spec
+triton_spec_link = os.path.join(triton_root, "triton", "ascend")
+if not os.path.exists(triton_spec_link):
+    os.symlink(os.path.join(flagtree_root_dir, "third_party", "ascend", "backend"), triton_spec_link)
+
+
+def get_extra_spec_packages():
+    pkgs = ["triton/ascend"]
+    # scan triton_spec_link for subpackages
+    for root, dirs, files in os.walk(triton_spec_link):
+        for d in dirs:
+            pkg = os.path.relpath(os.path.join(root, d), triton_root)
+            pkgs.append(pkg)
+    return pkgs
+
 
 def get_extra_install_packages():
     return [
@@ -16,7 +32,7 @@ def get_extra_install_packages():
         "triton/extension/buffer",
         "triton/extension/buffer/language",
         "triton/experimental/tle/language/dsa/ascend",
-    ]
+    ] + get_extra_spec_packages()
 
 
 def get_package_dir():
